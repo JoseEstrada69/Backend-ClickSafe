@@ -437,6 +437,22 @@ se revela al cliente.
 Todos bajo `/api/v1`. 🔓 = `@Public()`. 👑 = admin + 2FA. El resto requiere
 usuario autenticado. Todas las respuestas documentadas en Swagger con sus DTOs.
 
+**Contrato común** (la app iOS ya se está programando contra esto; no lo cambies sin avisarme):
+- JSON de respuesta en **camelCase** (`urlPublicacion`, `totalLikes`, `fechaCreacion`).
+  Los bodies de petición usan los nombres indicados en cada endpoint.
+- Fechas en ISO 8601 UTC con `Z` (`2026-09-26T18:30:00.000Z`).
+- Listados paginados: `{ "items": [...], "page": 1, "limit": 20, "total": 134 }`.
+- Errores: el formato de 4.5. Cuando la app necesita distinguir un caso, se
+  agrega un campo `code` estable. Lista cerrada (agregar uno nuevo = avisarme,
+  porque la app los traduce a mensajes): `EMAIL_NOT_VERIFIED`, `CAPTCHA_INVALID`,
+  `INVALID_CODE` (código de correo incorrecto o expirado), `PASSWORD_WEAK`,
+  `REPORT_NOT_EDITABLE`, `EVIDENCE_LIMIT`, `INVALID_IMAGE`, `OWN_REPORT`
+  (like o revisión a reporte propio), `OWN_COMMENT` (denunciar comentario
+  propio), `ALREADY_FLAGGED`, `CATALOG_INACTIVE`, `PLATFORM_OTHER_REQUIRED`.
+- La app iOS es **solo para usuarios** (`rol = 'usuario'`). Los admins usan el
+  sitio web. Si un admin inicia sesión en la app, la app recibe `mfaRequired`
+  o `mfaSetupRequired` y le muestra que use el panel web.
+
 ### Auth (`/auth`, rate limit estricto)
 | Método | Ruta | Notas |
 |---|---|---|
@@ -467,10 +483,10 @@ usuario autenticado. Todas las respuestas documentadas en Swagger con sus DTOs.
 ### Reportes
 | Método | Ruta | Notas |
 |---|---|---|
-| GET | `/reports` | feed paginado. Filtros: `plataforma`, `categoria`, `estado`. Orden: `recientes` \| `populares` (enum) |
+| GET | `/reports` | feed paginado. Query: `q` (texto, máx. 100, busca en `titulo`, `descripcion` y `url_publicacion` con `LIKE` parametrizado **escapando `%`, `_` y `\`**), `plataforma` (id), `categoria` (id), `estado`, `orden` = `recientes` \| `populares` (enum), `page`, `limit` |
 | GET | `/reports/:id` | detalle |
-| POST | `/reports` | `multipart/form-data`: campos + hasta 5 imágenes (`evidencias`) |
-| PATCH | `/reports/:id` | autor + `pendiente` (atómico) |
+| POST | `/reports` | `multipart/form-data`: `titulo`, `descripcion`, `urlPublicacion`, `plataformaId`, `plataformaOtra?`, `categoriaId`, `anonimo` (`"true"`/`"false"`) + hasta 5 imágenes en el campo `evidencias` |
+| PATCH | `/reports/:id` | JSON con cualquiera de: `titulo`, `descripcion`, `urlPublicacion`, `plataformaId`, `plataformaOtra`, `categoriaId`, `anonimo`. Autor + `pendiente` (atómico) |
 | DELETE | `/reports/:id` | autor + `pendiente` (atómico) |
 | POST | `/reports/:id/evidences` | autor + `pendiente`, respetando máx. 5 en total |
 | DELETE | `/reports/:id/evidences/:evidenceId` | autor + `pendiente` |
@@ -492,6 +508,22 @@ Forma de un reporte en respuestas:
   "fechaCreacion": "...", "fechaActualizacion": "..."
 }
 ```
+Otras formas de respuesta (contrato con la app iOS):
+```json
+// Plataforma            { "id": 1, "nombre": "Mercado Libre", "esOtra": false }
+// Categoría             { "id": 1, "nombre": "Producto no entregado", "descripcion": "..." }
+// Comentario            { "id": 7, "contenido": "...", "anonimo": true, "autor": null, "esMio": false, "fechaCreacion": "..." }
+// Notificación          { "id": 3, "tipo": "reporte_validado", "mensaje": "...", "leida": false, "reporteId": 12, "fechaCreacion": "..." }
+// GET /me               { "nombre": "...", "correo": "...", "rol": "usuario", "fechaRegistro": "...", "totpActivo": false }
+// Mis comentarios       Comentario + { "reporteId": 12, "reporteTitulo": "...", "estado": "visible" | "oculto_auto" | "oculto_admin" }
+// Tokens                { "accessToken": "...", "refreshToken": "...", "expiresIn": 900 }
+// Captcha (ALTCHA)      { "algorithm": "SHA-256", "challenge": "<hex>", "maxnumber": 100000, "salt": "...", "signature": "<hex>" }
+// Like                  { "totalLikes": 15, "likedByMe": true }
+// Unread count          { "count": 4 }
+```
+Validación de campos de reporte: `titulo` 1–150, `descripcion` 20–5000,
+`plataformaOtra` 1–100, comentario `contenido` 1–1000, denuncia `detalle` ≤ 255.
+
 Usa clases de respuesta + `ClassSerializerInterceptor` o mappers explícitos
 para que **nunca** se filtre una entidad cruda (con `id_usuario`,
 `password_hash`, etc.) en una respuesta.
