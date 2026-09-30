@@ -1,29 +1,67 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { AppConfigService } from './../src/config/app-config.service';
+import { setupApp } from './../src/setup-app';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+describe('App (e2e) — Fase 1: línea base de seguridad', () => {
+  let app: NestExpressApplication;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication<NestExpressApplication>({
+      bodyParser: false,
+    });
+    setupApp(app, app.get(AppConfigService));
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterAll(async () => {
+    await app.close();
   });
 
-  afterEach(async () => {
-    await app.close();
+  it('GET /api/v1/health es público y responde solo { status: "ok" }', async () => {
+    const response = await request(app.getHttpServer()).get('/api/v1/health');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: 'ok' });
+    expect(response.headers['x-request-id']).toBeDefined();
+  });
+
+  it('asigna un X-Request-Id distinto en cada petición', async () => {
+    const first = await request(app.getHttpServer()).get('/api/v1/health');
+    const second = await request(app.getHttpServer()).get('/api/v1/health');
+
+    expect(first.headers['x-request-id']).not.toBe(
+      second.headers['x-request-id'],
+    );
+  });
+
+  it('aplica los headers de seguridad de helmet', async () => {
+    const response = await request(app.getHttpServer()).get('/api/v1/health');
+
+    expect(response.headers['x-content-type-options']).toBe('nosniff');
+    expect(response.headers['x-frame-options']).toBeDefined();
+  });
+
+  it('una ruta inexistente devuelve 404 con el formato de error estándar, sin filtrar detalles internos', async () => {
+    const response = await request(app.getHttpServer()).get(
+      '/api/v1/no-existe',
+    );
+    const body = response.body as {
+      statusCode: number;
+      error: string;
+      requestId: string;
+    };
+
+    expect(response.status).toBe(404);
+    expect(body).toMatchObject({ statusCode: 404, error: 'Not Found' });
+    expect(typeof body.requestId).toBe('string');
+    expect(body).not.toHaveProperty('stack');
+    expect(JSON.stringify(body)).not.toMatch(/node_modules|\.ts:\d+|at Object/);
   });
 });
