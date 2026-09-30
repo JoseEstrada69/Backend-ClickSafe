@@ -1,0 +1,36 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+build/
+
+# Tests
+coverage/
+
+# Variables de entorno (nunca versionar secretos reales)
+.env
+.env.*
+!.env.example
+
+# Almacenamiento de archivos subidos (evidencias)
+storage/
+
+# Certificados y llaves
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editores / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
