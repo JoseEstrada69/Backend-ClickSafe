@@ -13,8 +13,9 @@ coverage/
 .env.*
 !.env.example
 
-# Almacenamiento de archivos subidos (evidencias)
-storage/
+# Almacenamiento de archivos subidos (evidencias). Anclado a la raíz: sin
+# la barra inicial también ignoraría api/src/storage/ (el módulo de código).
+/storage/
 
 # Certificados y llaves
 *.pem

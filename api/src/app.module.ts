@@ -10,6 +10,10 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { HealthModule } from './health/health.module';
+import { DatabaseModule } from './database/database.module';
+import { AuditModule } from './audit/audit.module';
+import { MailModule } from './mail/mail.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -78,6 +82,10 @@ import { HealthModule } from './health/health.module';
         },
       }),
     }),
+    DatabaseModule,
+    AuditModule,
+    MailModule,
+    StorageModule,
     HealthModule,
   ],
   providers: [

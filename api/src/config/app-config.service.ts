@@ -50,4 +50,39 @@ export class AppConfigService {
       limit: this.configService.get('THROTTLE_LIMIT', { infer: true }),
     };
   }
+
+  get db(): {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    name: string;
+  } {
+    return {
+      host: this.configService.get('DB_HOST', { infer: true }),
+      port: this.configService.get('DB_PORT', { infer: true }),
+      username: this.configService.get('DB_USERNAME', { infer: true }),
+      password: this.configService.get('DB_PASSWORD', { infer: true }),
+      name: this.configService.get('DB_NAME', { infer: true }),
+    };
+  }
+
+  get mail(): { host: string; port: number; from: string } {
+    return {
+      host: this.configService.get('MAIL_HOST', { infer: true }),
+      port: this.configService.get('MAIL_PORT', { infer: true }),
+      from: this.configService.get('MAIL_FROM', { infer: true }),
+    };
+  }
+
+  get storageDir(): string {
+    return this.configService.get('STORAGE_DIR', { infer: true });
+  }
+
+  get seedAdmin(): { nombre?: string; correo?: string } {
+    return {
+      nombre: this.configService.get('SEED_ADMIN_NOMBRE', { infer: true }),
+      correo: this.configService.get('SEED_ADMIN_CORREO', { infer: true }),
+    };
+  }
 }

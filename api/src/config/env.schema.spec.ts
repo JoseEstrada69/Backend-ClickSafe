@@ -3,6 +3,7 @@ import { validateEnv } from './env.schema';
 describe('validateEnv', () => {
   const validConfig = {
     JWT_ACCESS_SECRET: 'a'.repeat(32),
+    DB_PASSWORD: 'db-password-de-prueba',
   };
 
   it('acepta una configuración válida y aplica los valores por defecto', () => {
@@ -39,5 +40,24 @@ describe('validateEnv', () => {
     expect(() =>
       validateEnv({ ...validConfig, NODE_ENV: 'staging' }),
     ).toThrow();
+  });
+
+  it('rechaza el arranque si falta DB_PASSWORD', () => {
+    expect(() => validateEnv({ JWT_ACCESS_SECRET: 'a'.repeat(32) })).toThrow(
+      /DB_PASSWORD/,
+    );
+  });
+
+  it('aplica los valores por defecto de BD, correo y almacenamiento', () => {
+    const result = validateEnv(validConfig);
+
+    expect(result.DB_HOST).toBe('127.0.0.1');
+    expect(result.DB_PORT).toBe(3306);
+    expect(result.DB_USERNAME).toBe('clicksafe_api');
+    expect(result.DB_NAME).toBe('clicksafe_db');
+    expect(result.MAIL_HOST).toBe('127.0.0.1');
+    expect(result.MAIL_PORT).toBe(1025);
+    expect(result.STORAGE_DIR).toBe('../storage');
+    expect(result.SEED_ADMIN_NOMBRE).toBeUndefined();
   });
 });

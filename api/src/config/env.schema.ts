@@ -44,6 +44,26 @@ export const envSchema = z.object({
   // Rate limit global (4.4): 100 peticiones/minuto por IP (o por usuario si hay token).
   THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
+
+  // Conexión a MySQL (2): la API se conecta como `clicksafe_api`, nunca como root.
+  DB_HOST: z.string().min(1).default('127.0.0.1'),
+  DB_PORT: z.coerce.number().int().positive().default(3306),
+  DB_USERNAME: z.string().min(1).default('clicksafe_api'),
+  DB_PASSWORD: z.string().min(1, 'DB_PASSWORD es obligatorio'),
+  DB_NAME: z.string().min(1).default('clicksafe_db'),
+
+  // Correo vía Mailpit en desarrollo (1, regla 12) — sin servicios externos.
+  MAIL_HOST: z.string().min(1).default('127.0.0.1'),
+  MAIL_PORT: z.coerce.number().int().positive().default(1025),
+  MAIL_FROM: z.string().min(1).default('ClickSafe <no-reply@clicksafe.local>'),
+
+  // Carpeta de evidencias, fuera de la carpeta del código (sección 6).
+  STORAGE_DIR: z.string().min(1).default('../storage'),
+
+  // Usados solo por scripts/seed-admin.ts; opcionales para que el resto de
+  // la API arranque sin ellos (se validan al correr el script, no aquí).
+  SEED_ADMIN_NOMBRE: z.string().min(1).optional(),
+  SEED_ADMIN_CORREO: z.string().email().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
