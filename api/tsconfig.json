@@ -20,5 +20,8 @@
     "noFallthroughCasesInSwitch": true,
     "strict": true,
     "strictPropertyInitialization": false
+  },
+  "ts-node": {
+    "files": true
   }
 }
