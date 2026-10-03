@@ -33,7 +33,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const requestId = request.id ?? 'unknown';
+    // pino-http declara request.id como ReqId (string | number | object).
+    // Solo lo normalizamos con String() cuando es string/number: un objeto
+    // se volvería "[object Object]" y perdería la información sin avisar.
+    const requestId =
+      typeof request.id === 'string' || typeof request.id === 'number'
+        ? String(request.id)
+        : 'unknown';
 
     const { status, error, message, logDetail } = this.resolve(exception);
 

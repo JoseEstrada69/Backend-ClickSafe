@@ -578,8 +578,19 @@ quitar. Nunca `total_likes = <valor calculado en Node>` (condición de carrera).
 ## 9. Fases de trabajo
 
 Cada fase va en su propia rama (ver sección 10). Al final de cada una:
-`npm run lint`, `npm test`, `npm run build` deben pasar sin errores ni
-warnings. Detente y explícame.
+`npm run typecheck`, `npm run lint`, `npm test`, `npm run build` deben pasar
+sin errores ni warnings. Detente y explícame.
+
+`npm run typecheck` (`tsc --noEmit` sobre `tsconfig.typecheck.json`, que
+cubre `src/`, `scripts/` y `test/` en un solo programa) existe porque
+`npm run build` y `npm run lint` no necesariamente revisan los mismos
+archivos: `nest build` sigue `tsconfig.build.json`, el lint sigue su propio
+glob, y `ts-node` (usado por `seed:admin` y scripts similares) resuelve su
+programa siguiendo los `import` desde el archivo de entrada, no todo el
+proyecto. Un archivo de tipos ambiental sin importar en ningún lado (p. ej.
+una declaración global) puede quedar invisible para `ts-node` aunque
+`build`/`lint` sí lo vean. `typecheck` fija ese árbol de archivos de forma
+explícita para que los tres comandos revisen siempre el mismo universo.
 
 **Fase 0 — Base del repo**
 Estructura de carpetas, `.gitignore`, `.gitattributes`, `.editorconfig`,

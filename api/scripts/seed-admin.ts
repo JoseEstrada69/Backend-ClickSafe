@@ -31,10 +31,14 @@ async function run(): Promise<void> {
       return;
     }
 
-    const usuarioRepo = app.get<Repository<Usuario>>(getRepositoryToken(Usuario));
+    const usuarioRepo = app.get<Repository<Usuario>>(
+      getRepositoryToken(Usuario),
+    );
     const auditService = app.get(AuditService);
 
-    const existingAdmin = await usuarioRepo.findOne({ where: { rol: 'admin' } });
+    const existingAdmin = await usuarioRepo.findOne({
+      where: { rol: 'admin' },
+    });
     if (existingAdmin) {
       console.log('Ya existe al menos un admin. No se creó ninguno.');
       return;

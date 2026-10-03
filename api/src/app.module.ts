@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule, JwtService } from '@nestjs/jwt';
@@ -24,8 +25,13 @@ import { StorageModule } from './storage/storage.module';
       useFactory: (appConfig: AppConfigService) => ({
         pinoHttp: {
           level: appConfig.isProduction ? 'info' : 'debug',
-          // requestIdMiddleware (main.ts) ya asignó req.id antes de llegar aquí.
-          genReqId: (req: Request) => req.id,
+          // requestIdMiddleware (main.ts) ya asignó req.id (string) antes de
+          // llegar aquí. El tipo declarado por pino-http es ReqId
+          // (string | number, para admitir su contador numérico por
+          // defecto) — generamos un UUID de respaldo si por algún motivo
+          // no corrió el middleware, para que requestId sea SIEMPRE texto.
+          genReqId: (req: Request): string =>
+            typeof req.id === 'string' ? req.id : randomUUID(),
           transport: appConfig.isProduction
             ? undefined
             : {
