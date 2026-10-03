@@ -3,6 +3,10 @@ import { validateEnv } from './env.schema';
 describe('validateEnv', () => {
   const validConfig = {
     JWT_ACCESS_SECRET: 'a'.repeat(32),
+    JWT_MFA_SECRET: 'b'.repeat(32),
+    TOTP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+    CODE_HMAC_KEY: 'c'.repeat(32),
+    CAPTCHA_HMAC_KEY: 'd'.repeat(32),
     DB_PASSWORD: 'db-password-de-prueba',
   };
 
@@ -59,5 +63,12 @@ describe('validateEnv', () => {
     expect(result.MAIL_PORT).toBe(1025);
     expect(result.STORAGE_DIR).toBe('../storage');
     expect(result.SEED_ADMIN_NOMBRE).toBeUndefined();
+    expect(result.THROTTLE_AUTH_LIMIT).toBe(5);
+  });
+
+  it('rechaza TOTP_ENCRYPTION_KEY que no decodifique a exactamente 32 bytes', () => {
+    expect(() =>
+      validateEnv({ ...validConfig, TOTP_ENCRYPTION_KEY: 'demasiado-corto' }),
+    ).toThrow(/TOTP_ENCRYPTION_KEY/);
   });
 });

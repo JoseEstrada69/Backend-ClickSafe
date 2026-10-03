@@ -9,12 +9,15 @@ import {
 import { STATUS_CODES } from 'node:http';
 import type { Request, Response } from 'express';
 import { PinoLogger } from 'nestjs-pino';
+import type { ErrorCode } from '../errors/error-code.type';
 
 interface ErrorResponseBody {
   statusCode: number;
   error: string;
   message: string | string[];
   requestId: string;
+  /** Solo presente cuando la excepción lo trae (lista cerrada, sección 7). */
+  code?: ErrorCode;
 }
 
 /**
@@ -41,7 +44,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? String(request.id)
         : 'unknown';
 
-    const { status, error, message, logDetail } = this.resolve(exception);
+    const { status, error, message, code, logDetail } = this.resolve(exception);
 
     // 500 en vez de HttpStatus.INTERNAL_SERVER_ERROR: comparar un `number`
     // contra ese enum dispara @typescript-eslint/no-unsafe-enum-comparison,
@@ -57,6 +60,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       error,
       message,
       requestId,
+      ...(code ? { code } : {}),
     };
     response.status(status).json(body);
   }
@@ -65,18 +69,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
     status: number;
     error: string;
     message: string | string[];
+    code?: ErrorCode;
     logDetail: string;
   } {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
-      const message = this.extractMessage(
-        exception.getResponse(),
-        exception.message,
-      );
+      const responseBody = exception.getResponse();
       return {
         status,
         error: STATUS_CODES[status] ?? 'Error',
-        message,
+        message: this.extractMessage(responseBody, exception.message),
+        code: this.extractCode(responseBody),
         logDetail: exception.message,
       };
     }
@@ -110,5 +113,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
     }
     return fallback;
+  }
+
+  /** Solo se expone si la propia excepción trae un `code` (lista cerrada, sección 7). */
+  private extractCode(responseBody: unknown): ErrorCode | undefined {
+    if (
+      typeof responseBody === 'object' &&
+      responseBody !== null &&
+      'code' in responseBody &&
+      typeof responseBody.code === 'string'
+    ) {
+      return responseBody.code as ErrorCode;
+    }
+    return undefined;
   }
 }

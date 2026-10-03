@@ -1,7 +1,9 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { Repository } from 'typeorm';
 import { AppConfigService } from '../../config/app-config.service';
+import { Sesion } from '../../database/entities';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import type { AuthenticatedRequest } from '../interfaces/jwt-payload.interface';
 
@@ -9,6 +11,7 @@ describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
   let reflector: { getAllAndOverride: jest.Mock };
   let jwtService: { verifyAsync: jest.Mock };
+  let sesionRepo: { findOne: jest.Mock };
   let appConfig: AppConfigService;
 
   const buildContext = (
@@ -25,6 +28,7 @@ describe('JwtAuthGuard', () => {
   beforeEach(() => {
     reflector = { getAllAndOverride: jest.fn() };
     jwtService = { verifyAsync: jest.fn() };
+    sesionRepo = { findOne: jest.fn() };
     appConfig = {
       jwt: {
         accessSecret: 'secret',
@@ -37,6 +41,7 @@ describe('JwtAuthGuard', () => {
       reflector as unknown as Reflector,
       jwtService as unknown as JwtService,
       appConfig,
+      sesionRepo as unknown as Repository<Sesion>,
     );
   });
 
@@ -68,10 +73,15 @@ describe('JwtAuthGuard', () => {
     );
   });
 
-  it('adjunta el payload a request.user cuando el token es válido', async () => {
+  it('adjunta el payload a request.user cuando el token y la sesión son válidos', async () => {
     reflector.getAllAndOverride.mockReturnValue(false);
-    const payload = { sub: 1, rol: 'usuario', sid: 'abc', mfa: false };
+    const payload = { sub: 1, rol: 'usuario', sid: '42', mfa: false };
     jwtService.verifyAsync.mockResolvedValue(payload);
+    sesionRepo.findOne.mockResolvedValue({
+      idSesion: 42,
+      revocadaEn: null,
+      usuario: { activo: true },
+    });
     const request: Partial<AuthenticatedRequest> = {
       headers: { authorization: 'Bearer valid.token.here' },
     };
@@ -85,6 +95,10 @@ describe('JwtAuthGuard', () => {
       issuer: 'clicksafe-api',
       audience: 'clicksafe-app',
     });
+    expect(sesionRepo.findOne).toHaveBeenCalledWith({
+      where: { idSesion: 42 },
+      relations: { usuario: true },
+    });
   });
 
   it('rechaza con mensaje genérico si el token es inválido o expiró', async () => {
@@ -92,6 +106,68 @@ describe('JwtAuthGuard', () => {
     jwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
     const context = buildContext({
       headers: { authorization: 'Bearer expired.token' },
+    });
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      'Token inválido o expirado',
+    );
+  });
+
+  it('rechaza si la sesión fue revocada (logout u otra causa)', async () => {
+    reflector.getAllAndOverride.mockReturnValue(false);
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 1,
+      rol: 'usuario',
+      sid: '42',
+      mfa: false,
+    });
+    sesionRepo.findOne.mockResolvedValue({
+      idSesion: 42,
+      revocadaEn: new Date(),
+      usuario: { activo: true },
+    });
+    const context = buildContext({
+      headers: { authorization: 'Bearer valid.token.here' },
+    });
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      'Token inválido o expirado',
+    );
+  });
+
+  it('rechaza si el usuario de la sesión ya no está activo (suspendido)', async () => {
+    reflector.getAllAndOverride.mockReturnValue(false);
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 1,
+      rol: 'usuario',
+      sid: '42',
+      mfa: false,
+    });
+    sesionRepo.findOne.mockResolvedValue({
+      idSesion: 42,
+      revocadaEn: null,
+      usuario: { activo: false },
+    });
+    const context = buildContext({
+      headers: { authorization: 'Bearer valid.token.here' },
+    });
+
+    await expect(guard.canActivate(context)).rejects.toThrow(
+      'Token inválido o expirado',
+    );
+  });
+
+  it('rechaza si la sesión del token ya no existe', async () => {
+    reflector.getAllAndOverride.mockReturnValue(false);
+    jwtService.verifyAsync.mockResolvedValue({
+      sub: 1,
+      rol: 'usuario',
+      sid: '999',
+      mfa: false,
+    });
+    sesionRepo.findOne.mockResolvedValue(null);
+    const context = buildContext({
+      headers: { authorization: 'Bearer valid.token.here' },
     });
 
     await expect(guard.canActivate(context)).rejects.toThrow(

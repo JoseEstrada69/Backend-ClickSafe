@@ -41,9 +41,38 @@ export const envSchema = z.object({
   JWT_ISSUER: z.string().min(1).default('clicksafe-api'),
   JWT_AUDIENCE: z.string().min(1).default('clicksafe-app'),
 
+  // Firma los mfaToken (5.4/5.5). Nunca debe ser igual a JWT_ACCESS_SECRET.
+  JWT_MFA_SECRET: z
+    .string()
+    .min(32, 'JWT_MFA_SECRET debe tener al menos 32 caracteres'),
+
+  // Cifra el secreto TOTP (AES-256-GCM) antes de guardarlo (5.5). Debe
+  // decodificar, en base64, a exactamente 32 bytes.
+  TOTP_ENCRYPTION_KEY: z.string().refine((value) => {
+    try {
+      return Buffer.from(value, 'base64').length === 32;
+    } catch {
+      return false;
+    }
+  }, 'TOTP_ENCRYPTION_KEY debe ser 32 bytes en base64 (usa randomBytes(32).toString("base64"))'),
+
+  // HMAC de los códigos de verificación/recuperación (5.3/5.7).
+  CODE_HMAC_KEY: z
+    .string()
+    .min(32, 'CODE_HMAC_KEY debe tener al menos 32 caracteres'),
+
+  // HMAC del reto proof-of-work del captcha (5.2).
+  CAPTCHA_HMAC_KEY: z
+    .string()
+    .min(32, 'CAPTCHA_HMAC_KEY debe tener al menos 32 caracteres'),
+
   // Rate limit global (4.4): 100 peticiones/minuto por IP (o por usuario si hay token).
   THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
+
+  // Rate limit de /auth/* (4.4): 5 peticiones/minuto por IP.
+  THROTTLE_AUTH_TTL_MS: z.coerce.number().int().positive().default(60_000),
+  THROTTLE_AUTH_LIMIT: z.coerce.number().int().positive().default(5),
 
   // Conexión a MySQL (2): la API se conecta como `clicksafe_api`, nunca como root.
   DB_HOST: z.string().min(1).default('127.0.0.1'),
