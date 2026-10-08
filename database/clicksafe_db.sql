@@ -14,8 +14,12 @@
 --     además de validarse en la API (defensa en profundidad).
 -- =====================================================================
 
--- ADVERTENCIA: la siguiente línea elimina toda la base. Solo en desarrollo.
-DROP DATABASE IF EXISTS clicksafe_db;
+-- Si clicksafe_db ya existe, CREATE DATABASE falla a propósito (error
+-- "database exists") en vez de continuar: así una ejecución accidental de
+-- este script nunca borra una base con datos reales. Para reiniciarla de
+-- verdad (solo en desarrollo, nunca en producción), borra la base a mano
+-- antes de correr el script:
+--   DROP DATABASE clicksafe_db;
 CREATE DATABASE clicksafe_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE clicksafe_db;
 
