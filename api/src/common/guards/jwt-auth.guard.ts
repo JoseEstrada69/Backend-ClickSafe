@@ -12,6 +12,7 @@ import { AppConfigService } from '../../config/app-config.service';
 import { Sesion } from '../../database/entities';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { extractBearerToken } from '../utils/extract-bearer-token';
+import { isSessionValid } from '../utils/is-session-valid';
 import type {
   AuthenticatedRequest,
   JwtAccessPayload,
@@ -63,7 +64,7 @@ export class JwtAuthGuard implements CanActivate {
         },
       );
 
-      if (!(await this.isSessionValid(payload))) {
+      if (!(await isSessionValid(this.sesionRepo, payload.sid))) {
         throw new UnauthorizedException('Token inválido o expirado');
       }
 
@@ -74,20 +75,5 @@ export class JwtAuthGuard implements CanActivate {
       // revocada / usuario suspendido / malformado.
       throw new UnauthorizedException('Token inválido o expirado');
     }
-  }
-
-  private async isSessionValid(payload: JwtAccessPayload): Promise<boolean> {
-    const idSesion = Number(payload.sid);
-    if (!Number.isInteger(idSesion)) {
-      return false;
-    }
-    const sesion = await this.sesionRepo.findOne({
-      where: { idSesion },
-      relations: { usuario: true },
-    });
-    if (!sesion || sesion.revocadaEn) {
-      return false;
-    }
-    return sesion.usuario.activo;
   }
 }

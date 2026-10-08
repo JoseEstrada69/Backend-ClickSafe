@@ -2,11 +2,11 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   HttpStatus,
   Post,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
@@ -19,7 +19,10 @@ import { ClientInfo } from '../common/decorators/client-info.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
 import type { RequestMeta } from '../common/interfaces/request-meta.interface';
-import { BEARER_AUTH_SCHEME_NAME } from '../common/swagger/bearer-auth.constant';
+import {
+  BEARER_AUTH_SCHEME_NAME,
+  MFA_TOKEN_SCHEME_NAME,
+} from '../common/swagger/bearer-auth.constant';
 import {
   ApiBadRequestResponse,
   ApiForbiddenResponse,
@@ -28,6 +31,7 @@ import {
 } from '../common/swagger/error-responses.decorator';
 import { CaptchaService } from '../captcha/captcha.service';
 import type { CaptchaChallenge } from '../captcha/captcha.service';
+import { Usuario } from '../database/entities';
 import { AuthService } from './auth.service';
 import {
   GenericMessageResponse,
@@ -35,6 +39,7 @@ import {
   Setup2faResponse,
   TokensResponse,
 } from './auth-responses.interface';
+import { MfaAdmin } from './decorators/mfa-admin.decorator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { MfaEnableDto } from './dto/mfa-enable.dto';
@@ -44,6 +49,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { MfaOrAdminSessionGuard } from './guards/mfa-or-admin-session.guard';
 import { MfaService } from './mfa.service';
 import { SessionService } from './session.service';
 
@@ -149,25 +155,27 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(MfaOrAdminSessionGuard)
   @Post('2fa/setup')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth(MFA_TOKEN_SCHEME_NAME)
+  @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
   @ApiOkResponse({
     description: 'Secreto generado: { otpauthUri, qrCodeDataUrl } (5.5).',
   })
   @ApiUnauthorizedResponse(
     'Falta el token, o es inválido/expiró (mfaToken de setup o access token de admin).',
   )
-  async setup2fa(
-    @Headers('authorization') authorization?: string,
-  ): Promise<Setup2faResponse> {
-    const admin =
-      await this.mfaService.resolveAdminFromMfaOrSession(authorization);
+  setup2fa(@MfaAdmin() admin: Usuario): Promise<Setup2faResponse> {
     return this.mfaService.setup2fa(admin);
   }
 
   @Public()
+  @UseGuards(MfaOrAdminSessionGuard)
   @Post('2fa/enable')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth(MFA_TOKEN_SCHEME_NAME)
+  @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
   @ApiOkResponse({ description: '2FA activado.' })
   @ApiBadRequestResponse(
     'Todavía no se llamó a /2fa/setup, o el código no tiene el formato esperado.',
@@ -177,10 +185,8 @@ export class AuthController {
   )
   async enable2fa(
     @Body() dto: MfaEnableDto,
-    @Headers('authorization') authorization?: string,
+    @MfaAdmin() admin: Usuario,
   ): Promise<GenericMessageResponse> {
-    const admin =
-      await this.mfaService.resolveAdminFromMfaOrSession(authorization);
     await this.mfaService.enable2fa(admin, dto.codigo);
     return { message: '2FA activado correctamente.' };
   }

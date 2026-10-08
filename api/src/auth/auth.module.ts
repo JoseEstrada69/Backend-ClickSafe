@@ -8,6 +8,7 @@ import { TokenVerificacion } from '../database/entities';
 import { MailModule } from '../mail/mail.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { MfaOrAdminSessionGuard } from './guards/mfa-or-admin-session.guard';
 import { LockoutService } from './lockout.service';
 import { MfaService } from './mfa.service';
 import { SessionService } from './session.service';
@@ -24,7 +25,13 @@ import { SessionService } from './session.service';
     TypeOrmModule.forFeature([TokenVerificacion]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, SessionService, MfaService, LockoutService],
+  providers: [
+    AuthService,
+    SessionService,
+    MfaService,
+    LockoutService,
+    MfaOrAdminSessionGuard,
+  ],
   exports: [SessionService],
 })
 export class AuthModule {}
