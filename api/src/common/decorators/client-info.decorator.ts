@@ -1,6 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
 import type { RequestMeta } from '../interfaces/request-meta.interface';
+import { normalizeIp } from '../utils/normalize-ip';
 
 /**
  * Columnas Sesion.user_agent y Bitacora_auditoria.user_agent son
@@ -32,7 +33,7 @@ export const ClientInfo = createParamDecorator(
     const rawUserAgent = request.headers['user-agent'];
 
     return {
-      ip: request.ip ?? null,
+      ip: normalizeIp(request.ip),
       userAgent:
         typeof rawUserAgent === 'string' && rawUserAgent.length > 0
           ? rawUserAgent.slice(0, MAX_USER_AGENT_LENGTH)

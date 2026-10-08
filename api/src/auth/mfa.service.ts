@@ -79,7 +79,11 @@ export class MfaService {
     return { otpauthUri, qrCodeDataUrl };
   }
 
-  async enable2fa(usuario: Usuario, codigo: string): Promise<void> {
+  async enable2fa(
+    usuario: Usuario,
+    codigo: string,
+    meta: RequestMeta = {},
+  ): Promise<void> {
     if (!usuario.totpSecreto) {
       throw new BadRequestException(
         'Primero configura el 2FA con /auth/2fa/setup.',
@@ -96,6 +100,8 @@ export class MfaService {
         idUsuario: usuario.idUsuario,
         accion: '2fa_fallo',
         resultado: 'fallo',
+        ip: meta.ip,
+        userAgent: meta.userAgent,
       });
       throw new UnauthorizedException('Código inválido');
     }
@@ -109,6 +115,8 @@ export class MfaService {
       idUsuario: usuario.idUsuario,
       accion: '2fa_activado',
       resultado: 'exito',
+      ip: meta.ip,
+      userAgent: meta.userAgent,
     });
   }
 

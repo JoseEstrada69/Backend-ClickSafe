@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
-import { SessionService } from '../auth/session.service';
+import { RequestMeta, SessionService } from '../auth/session.service';
 import { hashPassword, verifyPassword } from '../common/utils/password-hash';
 import { validatePasswordStrength } from '../auth/utils/password-strength';
 import { Usuario } from '../database/entities';
@@ -39,6 +39,7 @@ export class MeService {
     idUsuario: number,
     idSesionActual: number,
     dto: ChangePasswordDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const usuario = await this.findOrThrow(idUsuario);
 
@@ -61,6 +62,8 @@ export class MeService {
       idUsuario,
       accion: 'password_cambiada',
       resultado: 'exito',
+      ip: meta.ip,
+      userAgent: meta.userAgent,
     });
   }
 

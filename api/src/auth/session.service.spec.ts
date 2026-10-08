@@ -176,22 +176,52 @@ describe('SessionService', () => {
   });
 
   describe('logout / logoutAll', () => {
-    it('logout revoca solo la sesión indicada', async () => {
-      await service.logout(5);
+    it('logout revoca solo la sesión indicada y audita logout con ip/userAgent (4.6)', async () => {
+      await service.logout(5, 1, { ip: '203.0.113.5', userAgent: 'curl/8' });
 
       expect(sesionRepo.update).toHaveBeenCalledWith(
         { idSesion: 5, revocadaEn: expect.anything() },
         { revocadaEn: expect.any(Date) },
       );
+      expect(auditService.log).toHaveBeenCalledWith({
+        idUsuario: 1,
+        accion: 'logout',
+        resultado: 'exito',
+        recursoTipo: 'Sesion',
+        recursoId: 5,
+        ip: '203.0.113.5',
+        userAgent: 'curl/8',
+      });
     });
 
-    it('logoutAll revoca todas las sesiones activas del usuario', async () => {
-      await service.logoutAll(1);
+    it('logoutAll revoca todas las sesiones activas del usuario y audita logout', async () => {
+      await service.logoutAll(1, { ip: '203.0.113.5', userAgent: 'curl/8' });
 
       expect(sesionRepo.update).toHaveBeenCalledWith(
         { idUsuario: 1, revocadaEn: expect.anything() },
         { revocadaEn: expect.any(Date) },
       );
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          idUsuario: 1,
+          accion: 'logout',
+          resultado: 'exito',
+          ip: '203.0.113.5',
+          userAgent: 'curl/8',
+        }),
+      );
+    });
+  });
+
+  describe('revokeAllForUser', () => {
+    it('revoca las sesiones pero NO audita logout (es efecto secundario de otra acción que ya audita la suya)', async () => {
+      await service.revokeAllForUser(1);
+
+      expect(sesionRepo.update).toHaveBeenCalledWith(
+        { idUsuario: 1, revocadaEn: expect.anything() },
+        { revocadaEn: expect.any(Date) },
+      );
+      expect(auditService.log).not.toHaveBeenCalled();
     });
   });
 });

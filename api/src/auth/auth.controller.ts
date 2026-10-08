@@ -111,8 +111,9 @@ export class AuthController {
   )
   async verifyEmail(
     @Body() dto: VerifyEmailDto,
+    @ClientInfo() client: RequestMeta,
   ): Promise<GenericMessageResponse> {
-    await this.authService.verifyEmail(dto);
+    await this.authService.verifyEmail(dto, client);
     return { message: 'Correo verificado correctamente.' };
   }
 
@@ -186,8 +187,9 @@ export class AuthController {
   async enable2fa(
     @Body() dto: MfaEnableDto,
     @MfaAdmin() admin: Usuario,
+    @ClientInfo() client: RequestMeta,
   ): Promise<GenericMessageResponse> {
-    await this.mfaService.enable2fa(admin, dto.codigo);
+    await this.mfaService.enable2fa(admin, dto.codigo, client);
     return { message: '2FA activado correctamente.' };
   }
 
@@ -232,8 +234,15 @@ export class AuthController {
   @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
   @ApiNoContentResponse({ description: 'Sesión actual revocada.' })
   @ApiUnauthorizedResponse()
-  async logout(@Req() req: AuthenticatedRequest): Promise<void> {
-    await this.sessionService.logout(Number(req.user?.sid));
+  async logout(
+    @Req() req: AuthenticatedRequest,
+    @ClientInfo() client: RequestMeta,
+  ): Promise<void> {
+    await this.sessionService.logout(
+      Number(req.user?.sid),
+      Number(req.user?.sub),
+      client,
+    );
   }
 
   @Post('logout-all')
@@ -243,8 +252,11 @@ export class AuthController {
     description: 'Todas las sesiones del usuario revocadas.',
   })
   @ApiUnauthorizedResponse()
-  async logoutAll(@Req() req: AuthenticatedRequest): Promise<void> {
-    await this.sessionService.logoutAll(Number(req.user?.sub));
+  async logoutAll(
+    @Req() req: AuthenticatedRequest,
+    @ClientInfo() client: RequestMeta,
+  ): Promise<void> {
+    await this.sessionService.logoutAll(Number(req.user?.sub), client);
   }
 
   @Public()
@@ -259,8 +271,9 @@ export class AuthController {
   )
   forgotPassword(
     @Body() dto: ForgotPasswordDto,
+    @ClientInfo() client: RequestMeta,
   ): Promise<GenericMessageResponse> {
-    return this.authService.forgotPassword(dto);
+    return this.authService.forgotPassword(dto, client);
   }
 
   @Public()

@@ -128,7 +128,10 @@ export class AuthService {
     return GENERIC_VERIFICATION_MESSAGE;
   }
 
-  async verifyEmail(dto: VerifyEmailDto): Promise<void> {
+  async verifyEmail(
+    dto: VerifyEmailDto,
+    meta: RequestMeta = {},
+  ): Promise<void> {
     const correo = normalizeEmail(dto.correo);
     const usuario = await this.usuarioRepo.findOne({ where: { correo } });
     if (!usuario) {
@@ -165,6 +168,8 @@ export class AuthService {
       idUsuario: usuario.idUsuario,
       accion: 'correo_verificado',
       resultado: 'exito',
+      ip: meta.ip,
+      userAgent: meta.userAgent,
     });
   }
 
@@ -249,6 +254,7 @@ export class AuthService {
 
   async forgotPassword(
     dto: ForgotPasswordDto,
+    meta: RequestMeta = {},
   ): Promise<GenericMessageResponse> {
     await this.requireValidCaptcha(dto.captcha);
 
@@ -260,6 +266,8 @@ export class AuthService {
         idUsuario: usuario.idUsuario,
         accion: 'password_recuperacion_solicitada',
         resultado: 'exito',
+        ip: meta.ip,
+        userAgent: meta.userAgent,
       });
     }
     return GENERIC_RECOVERY_MESSAGE;

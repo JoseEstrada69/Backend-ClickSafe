@@ -11,6 +11,7 @@ import { ConfigModule } from './config/config.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { normalizeIp } from './common/utils/normalize-ip';
 import { HealthModule } from './health/health.module';
 import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './audit/audit.module';
@@ -89,7 +90,7 @@ import { MeModule } from './me/me.module';
               return `user:${decoded.sub}`;
             }
           }
-          return `ip:${request.ip ?? 'unknown'}`;
+          return `ip:${normalizeIp(request.ip) ?? 'unknown'}`;
         },
       }),
     }),

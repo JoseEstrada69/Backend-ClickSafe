@@ -147,23 +147,56 @@ export class SessionService {
     };
   }
 
-  async logout(idSesion: number): Promise<void> {
+  /** Único llamador: POST /auth/logout. Audita 'logout' (4.6) — por eso recibe idUsuario y meta, a diferencia de revokeAllForUser/revokeAllExceptCurrent, que son efecto secundario de OTRA acción que ya audita la suya. */
+  async logout(
+    idSesion: number,
+    idUsuario: number,
+    meta: RequestMeta = {},
+  ): Promise<void> {
     await this.sesionRepo.update(
       { idSesion, revocadaEn: IsNull() },
       { revocadaEn: new Date() },
     );
+    await this.auditService.log({
+      idUsuario,
+      accion: 'logout',
+      resultado: 'exito',
+      recursoTipo: 'Sesion',
+      recursoId: idSesion,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
   }
 
-  async logoutAll(idUsuario: number): Promise<void> {
+  /** Único llamador: POST /auth/logout-all. Ver nota de logout() sobre por qué audita y revokeAllForUser no. */
+  async logoutAll(idUsuario: number, meta: RequestMeta = {}): Promise<void> {
     await this.sesionRepo.update(
       { idUsuario, revocadaEn: IsNull() },
       { revocadaEn: new Date() },
     );
+    await this.auditService.log({
+      idUsuario,
+      accion: 'logout',
+      resultado: 'exito',
+      detalle: { alcance: 'todas_las_sesiones' },
+      ip: meta.ip,
+      userAgent: meta.userAgent,
+    });
   }
 
-  /** Usado por restablecimiento de contraseña (5.7) y suspensión de usuario. */
+  /**
+   * Usado por restablecimiento de contraseña (5.7) y suspensión de usuario.
+   * No llama a logoutAll() ni audita 'logout' a propósito: es un efecto
+   * secundario de esa otra acción, que ya audita la suya propia
+   * (password_cambiada, usuario_suspendido) — auditar 'logout' aquí
+   * también duplicaría/confundiría la bitácora con dos eventos para una
+   * sola acción del usuario.
+   */
   async revokeAllForUser(idUsuario: number): Promise<void> {
-    await this.logoutAll(idUsuario);
+    await this.sesionRepo.update(
+      { idUsuario, revocadaEn: IsNull() },
+      { revocadaEn: new Date() },
+    );
   }
 
   /**

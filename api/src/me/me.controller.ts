@@ -13,7 +13,9 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import { ClientInfo } from '../common/decorators/client-info.decorator';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
+import type { RequestMeta } from '../common/interfaces/request-meta.interface';
 import { BEARER_AUTH_SCHEME_NAME } from '../common/swagger/bearer-auth.constant';
 import {
   ApiBadRequestResponse,
@@ -66,10 +68,11 @@ export class MeController {
   changePassword(
     @Req() req: AuthenticatedRequest,
     @Body() dto: ChangePasswordDto,
+    @ClientInfo() client: RequestMeta,
   ): Promise<void> {
     const idUsuario = this.requireUserId(req);
     const idSesion = Number(req.user?.sid);
-    return this.meService.changePassword(idUsuario, idSesion, dto);
+    return this.meService.changePassword(idUsuario, idSesion, dto, client);
   }
 
   private requireUserId(req: AuthenticatedRequest): number {
