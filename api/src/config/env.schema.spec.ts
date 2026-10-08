@@ -71,4 +71,42 @@ describe('validateEnv', () => {
       validateEnv({ ...validConfig, TOTP_ENCRYPTION_KEY: 'demasiado-corto' }),
     ).toThrow(/TOTP_ENCRYPTION_KEY/);
   });
+
+  // Candado contra pruebas e2e corriendo sobre la base de desarrollo (7):
+  // con NODE_ENV=test, DB_NAME tiene que ser exactamente clicksafe_test.
+  it('rechaza NODE_ENV=test con DB_NAME distinto de clicksafe_test', () => {
+    expect(() =>
+      validateEnv({
+        ...validConfig,
+        NODE_ENV: 'test',
+        DB_NAME: 'clicksafe_db',
+      }),
+    ).toThrow(/clicksafe_test/);
+  });
+
+  it('rechaza NODE_ENV=test con DB_NAME por defecto (no se fijó ninguno)', () => {
+    expect(() => validateEnv({ ...validConfig, NODE_ENV: 'test' })).toThrow(
+      /clicksafe_test/,
+    );
+  });
+
+  it('acepta NODE_ENV=test cuando DB_NAME es clicksafe_test', () => {
+    const result = validateEnv({
+      ...validConfig,
+      NODE_ENV: 'test',
+      DB_NAME: 'clicksafe_test',
+    });
+
+    expect(result.DB_NAME).toBe('clicksafe_test');
+  });
+
+  it('no exige ninguna restricción sobre DB_NAME fuera de NODE_ENV=test', () => {
+    expect(() =>
+      validateEnv({
+        ...validConfig,
+        NODE_ENV: 'production',
+        DB_NAME: 'clicksafe_db',
+      }),
+    ).not.toThrow();
+  });
 });

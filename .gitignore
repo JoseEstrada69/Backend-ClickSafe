@@ -12,6 +12,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.test.example
 
 # Almacenamiento de archivos subidos (evidencias). Anclado a la raíz: sin
 # la barra inicial también ignoraría api/src/storage/ (el módulo de código).

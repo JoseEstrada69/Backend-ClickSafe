@@ -10,7 +10,7 @@ const booleanFromEnv = (defaultValue: 'true' | 'false') =>
     .default(defaultValue)
     .transform((value) => value === 'true');
 
-export const envSchema = z.object({
+const baseEnvSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'test', 'production'])
     .default('development'),
@@ -95,7 +95,23 @@ export const envSchema = z.object({
   SEED_ADMIN_CORREO: z.string().email().optional(),
 });
 
-export type EnvConfig = z.infer<typeof envSchema>;
+/**
+ * Candado contra pruebas e2e corriendo sobre la base de desarrollo (7): con
+ * NODE_ENV=test (lo pone Jest automáticamente si no se fija antes), DB_NAME
+ * debe ser EXACTAMENTE 'clicksafe_test'. Si alguien corre `test:e2e` sin
+ * `.env.test` o con uno mal configurado, la API ni siquiera arranca — las
+ * pruebas nunca llegan a tocar clicksafe_db.
+ */
+export const envSchema = baseEnvSchema.refine(
+  (config) => config.NODE_ENV !== 'test' || config.DB_NAME === 'clicksafe_test',
+  {
+    message:
+      "Con NODE_ENV=test, DB_NAME debe ser exactamente 'clicksafe_test' (nunca la base de desarrollo). Revisa api/.env.test.",
+    path: ['DB_NAME'],
+  },
+);
+
+export type EnvConfig = z.infer<typeof baseEnvSchema>;
 
 /**
  * Usado por ConfigModule.forRoot({ validate }). Si falta o es inválida una
