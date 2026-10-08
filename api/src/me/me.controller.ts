@@ -8,8 +8,13 @@ import {
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ApiNoContentResponse, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiNoContentResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
+import { BEARER_AUTH_SCHEME_NAME } from '../common/swagger/bearer-auth.constant';
 import {
   ApiBadRequestResponse,
   ApiTooManyRequestsResponse,
@@ -20,6 +25,7 @@ import { UpdateMeDto } from './dto/update-me.dto';
 import { MeResponse } from './me-response.interface';
 import { MeService } from './me.service';
 
+@ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
 @ApiUnauthorizedResponse(
   'Token requerido, inválido, expirado, o sesión revocada.',
 )

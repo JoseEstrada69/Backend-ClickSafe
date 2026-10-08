@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
+  ApiBearerAuth,
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
@@ -18,6 +19,7 @@ import { ClientInfo } from '../common/decorators/client-info.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
 import type { RequestMeta } from '../common/interfaces/request-meta.interface';
+import { BEARER_AUTH_SCHEME_NAME } from '../common/swagger/bearer-auth.constant';
 import {
   ApiBadRequestResponse,
   ApiForbiddenResponse,
@@ -221,6 +223,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
   @ApiNoContentResponse({ description: 'Sesión actual revocada.' })
   @ApiUnauthorizedResponse()
   async logout(@Req() req: AuthenticatedRequest): Promise<void> {
@@ -229,6 +232,7 @@ export class AuthController {
 
   @Post('logout-all')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
   @ApiNoContentResponse({
     description: 'Todas las sesiones del usuario revocadas.',
   })
