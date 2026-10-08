@@ -2,6 +2,15 @@ import { BadRequestException } from '@nestjs/common';
 import { isCommonPassword } from './common-passwords';
 
 /**
+ * Umbral mínimo para considerar una coincidencia real. Con 3 (el valor
+ * original) correos cortos como "ana@..." rechazaban contraseñas que
+ * solo contenían esas 3 letras por coincidencia (p. ej. "Manzana100"
+ * contiene "ana" sin que tenga nada que ver con el correo) — un falso
+ * positivo que bloqueaba contraseñas fuertes y legítimas.
+ */
+const MIN_MATCH_LENGTH = 4;
+
+/**
  * Valida una contraseña nueva (5.1): longitud 8–128, no estar en la lista
  * de comunes, no contener el correo ni el nombre del usuario. ASVS ya no
  * recomienda reglas de composición forzada (mayúsculas/símbolos/etc.), así
@@ -29,18 +38,24 @@ export function validatePasswordStrength(
   const lowerPassword = password.toLowerCase();
 
   const localPart = correo.split('@')[0]?.toLowerCase() ?? '';
-  if (localPart.length >= 3 && lowerPassword.includes(localPart)) {
+  if (
+    localPart.length >= MIN_MATCH_LENGTH &&
+    lowerPassword.includes(localPart)
+  ) {
     throw new BadRequestException({
       message: 'La contraseña no puede contener tu correo.',
       code: 'PASSWORD_WEAK',
     });
   }
 
-  const nombreNormalizado = nombre.trim().toLowerCase();
-  if (
-    nombreNormalizado.length >= 3 &&
-    lowerPassword.includes(nombreNormalizado)
-  ) {
+  // Por palabra, no el nombre completo: así "Click Safe" rechaza
+  // "ClickSafe" (contiene la palabra "click") aunque el nombre completo
+  // con espacio nunca aparezca literal dentro de la contraseña.
+  const palabrasDelNombre = nombre
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((palabra) => palabra.length >= MIN_MATCH_LENGTH);
+  if (palabrasDelNombre.some((palabra) => lowerPassword.includes(palabra))) {
     throw new BadRequestException({
       message: 'La contraseña no puede contener tu nombre.',
       code: 'PASSWORD_WEAK',

@@ -5,13 +5,25 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
-  Ip,
   Post,
   Req,
 } from '@nestjs/common';
+import {
+  ApiAcceptedResponse,
+  ApiNoContentResponse,
+  ApiOkResponse,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { ClientInfo } from '../common/decorators/client-info.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
+import type { RequestMeta } from '../common/interfaces/request-meta.interface';
+import {
+  ApiBadRequestResponse,
+  ApiForbiddenResponse,
+  ApiTooManyRequestsResponse,
+  ApiUnauthorizedResponse,
+} from '../common/swagger/error-responses.decorator';
 import { CaptchaService } from '../captcha/captcha.service';
 import type { CaptchaChallenge } from '../captcha/captcha.service';
 import { AuthService } from './auth.service';
@@ -31,7 +43,7 @@ import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { MfaService } from './mfa.service';
-import { RequestMeta, SessionService } from './session.service';
+import { SessionService } from './session.service';
 
 /**
  * Sobrescribe el throttler 'default' solo en /auth/* (4.4: 5/min por IP).
@@ -44,6 +56,7 @@ import { RequestMeta, SessionService } from './session.service';
     ttl: () => Number(process.env.THROTTLE_AUTH_TTL_MS ?? 60_000),
   },
 })
+@ApiTooManyRequestsResponse()
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -55,6 +68,10 @@ export class AuthController {
 
   @Public()
   @Get('captcha')
+  @ApiOkResponse({
+    description:
+      'Reto proof-of-work (5.2). Resuélvelo y manda el resultado en el campo `captcha`.',
+  })
   getCaptcha(): CaptchaChallenge {
     return this.captchaService.createChallenge();
   }
@@ -62,16 +79,28 @@ export class AuthController {
   @Public()
   @Post('register')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({
+    description:
+      'Respuesta idéntica exista o no el correo (previene enumeración de usuarios, 5.3).',
+  })
+  @ApiBadRequestResponse(
+    'Captcha inválido/expirado (CAPTCHA_INVALID), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.',
+  )
   register(
     @Body() dto: RegisterDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
+    @ClientInfo() client: RequestMeta,
   ): Promise<GenericMessageResponse> {
-    return this.authService.register(dto, { ip, userAgent });
+    return this.authService.register(dto, client);
   }
 
   @Public()
   @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Correo marcado como verificado.' })
+  @ApiBadRequestResponse(
+    'Código inválido o expirado (INVALID_CODE), o datos con formato inválido.',
+    'INVALID_CODE',
+  )
   async verifyEmail(
     @Body() dto: VerifyEmailDto,
   ): Promise<GenericMessageResponse> {
@@ -82,6 +111,13 @@ export class AuthController {
   @Public()
   @Post('resend-verification')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({
+    description: 'Respuesta idéntica exista o no el correo.',
+  })
+  @ApiBadRequestResponse(
+    'Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.',
+    'CAPTCHA_INVALID',
+  )
   resendVerification(
     @Body() dto: ResendVerificationDto,
   ): Promise<GenericMessageResponse> {
@@ -90,16 +126,35 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description:
+      'Usuario normal: {accessToken, refreshToken, expiresIn}. Admin: {mfaRequired|mfaSetupRequired, mfaToken} (5.4).',
+  })
+  @ApiBadRequestResponse(
+    'Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.',
+    'CAPTCHA_INVALID',
+  )
+  @ApiUnauthorizedResponse(
+    'Credenciales inválidas (correo, contraseña o cuenta bloqueada).',
+  )
+  @ApiForbiddenResponse('El correo aún no se verificó.', 'EMAIL_NOT_VERIFIED')
   login(
     @Body() dto: LoginDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
+    @ClientInfo() client: RequestMeta,
   ): Promise<TokensResponse | MfaChallengeResponse> {
-    return this.authService.login(dto, { ip, userAgent });
+    return this.authService.login(dto, client);
   }
 
   @Public()
   @Post('2fa/setup')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Secreto generado: { otpauthUri, qrCodeDataUrl } (5.5).',
+  })
+  @ApiUnauthorizedResponse(
+    'Falta el token, o es inválido/expiró (mfaToken de setup o access token de admin).',
+  )
   async setup2fa(
     @Headers('authorization') authorization?: string,
   ): Promise<Setup2faResponse> {
@@ -110,6 +165,14 @@ export class AuthController {
 
   @Public()
   @Post('2fa/enable')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: '2FA activado.' })
+  @ApiBadRequestResponse(
+    'Todavía no se llamó a /2fa/setup, o el código no tiene el formato esperado.',
+  )
+  @ApiUnauthorizedResponse(
+    'Token inválido/expirado, código incorrecto, o cuenta bloqueada.',
+  )
   async enable2fa(
     @Body() dto: MfaEnableDto,
     @Headers('authorization') authorization?: string,
@@ -122,33 +185,54 @@ export class AuthController {
 
   @Public()
   @Post('2fa/verify')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description:
+      'Código correcto: se emite la sesión completa, {accessToken, refreshToken, expiresIn}.',
+  })
+  @ApiBadRequestResponse('Datos con formato inválido.')
+  @ApiUnauthorizedResponse(
+    'mfaToken inválido/expirado, código incorrecto, o cuenta bloqueada.',
+  )
   verify2fa(
     @Body() dto: MfaVerifyDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
+    @ClientInfo() client: RequestMeta,
   ): Promise<TokensResponse> {
-    return this.mfaService.verify2fa(dto, { ip, userAgent });
+    return this.mfaService.verify2fa(dto, client);
   }
 
   @Public()
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description:
+      'Nuevo par {accessToken, refreshToken, expiresIn} (rotación, 5.6).',
+  })
+  @ApiBadRequestResponse('Datos con formato inválido.')
+  @ApiUnauthorizedResponse(
+    'Refresh token inválido, expirado, ya reemplazado (reuso detectado, revoca toda la familia), o usuario inactivo.',
+  )
   refresh(
     @Body() dto: RefreshDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
+    @ClientInfo() client: RequestMeta,
   ): Promise<TokensResponse> {
-    const meta: RequestMeta = { ip, userAgent };
-    return this.sessionService.refresh(dto.refreshToken, meta);
+    return this.sessionService.refresh(dto.refreshToken, client);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Sesión actual revocada.' })
+  @ApiUnauthorizedResponse()
   async logout(@Req() req: AuthenticatedRequest): Promise<void> {
     await this.sessionService.logout(Number(req.user?.sid));
   }
 
   @Post('logout-all')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({
+    description: 'Todas las sesiones del usuario revocadas.',
+  })
+  @ApiUnauthorizedResponse()
   async logoutAll(@Req() req: AuthenticatedRequest): Promise<void> {
     await this.sessionService.logoutAll(Number(req.user?.sub));
   }
@@ -156,6 +240,13 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.ACCEPTED)
+  @ApiAcceptedResponse({
+    description: 'Respuesta idéntica exista o no el correo (5.7).',
+  })
+  @ApiBadRequestResponse(
+    'Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.',
+    'CAPTCHA_INVALID',
+  )
   forgotPassword(
     @Body() dto: ForgotPasswordDto,
   ): Promise<GenericMessageResponse> {
@@ -164,11 +255,17 @@ export class AuthController {
 
   @Public()
   @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Contraseña cambiada, sesiones revocadas (5.7).',
+  })
+  @ApiBadRequestResponse(
+    'Captcha inválido/expirado (CAPTCHA_INVALID), código inválido/expirado (INVALID_CODE), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.',
+  )
   resetPassword(
     @Body() dto: ResetPasswordDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
+    @ClientInfo() client: RequestMeta,
   ): Promise<GenericMessageResponse> {
-    return this.authService.resetPassword(dto, { ip, userAgent });
+    return this.authService.resetPassword(dto, client);
   }
 }

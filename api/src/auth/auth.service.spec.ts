@@ -454,4 +454,176 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({ response: { code: 'INVALID_CODE' } });
     });
   });
+
+  describe('invalidación de códigos anteriores del mismo tipo (5.3)', () => {
+    // tokenRepo/usuarioRepo con estado real (no solo jest.fn() sueltos):
+    // se necesita que delete/save/findOne se comporten como una tabla de
+    // verdad para comprobar que pedir un segundo código invalida el primero.
+    function buildStatefulReposAndService() {
+      interface FakeToken {
+        idToken: number;
+        idUsuario: number;
+        tipo: string;
+        tokenHash: string;
+        intentos: number;
+        usadoEn: Date | null;
+        expiraEn: Date;
+      }
+      const tokenStore = new Map<string, FakeToken>();
+      let nextTokenId = 1;
+      const tokenKey = (idUsuario: number, tipo: string): string =>
+        `${idUsuario}:${tipo}`;
+
+      const statefulTokenRepo = {
+        findOne: jest.fn(
+          ({ where }: { where: { idUsuario: number; tipo: string } }) =>
+            Promise.resolve(
+              tokenStore.get(tokenKey(where.idUsuario, where.tipo)) ?? null,
+            ),
+        ),
+        delete: jest.fn(
+          ({ idUsuario, tipo }: { idUsuario: number; tipo: string }) => {
+            tokenStore.delete(tokenKey(idUsuario, tipo));
+            return Promise.resolve({ affected: 1 });
+          },
+        ),
+        create: jest.fn((data: Partial<FakeToken>) => data as FakeToken),
+        save: jest.fn((data: Partial<FakeToken>) => {
+          const row = {
+            idToken: nextTokenId++,
+            intentos: 0,
+            usadoEn: null,
+            ...data,
+          } as FakeToken;
+          tokenStore.set(tokenKey(row.idUsuario, row.tipo), row);
+          return Promise.resolve(row);
+        }),
+        update: jest.fn((idToken: number, patch: Partial<FakeToken>) => {
+          for (const row of tokenStore.values()) {
+            if (row.idToken === idToken) {
+              Object.assign(row, patch);
+            }
+          }
+          return Promise.resolve({ affected: 1 });
+        }),
+      };
+
+      const usuario = buildUsuario({ correoVerificado: false });
+      const statefulUsuarioRepo = {
+        findOne: jest.fn(() => Promise.resolve(usuario)),
+        save: jest.fn((data: Partial<Usuario>) =>
+          Promise.resolve({ ...usuario, ...data }),
+        ),
+        create: jest.fn((data: Partial<Usuario>) => data),
+        update: jest.fn((idUsuario: number, patch: Partial<Usuario>) => {
+          Object.assign(usuario, patch);
+          return Promise.resolve({ affected: 1 });
+        }),
+      };
+
+      const localMailService = {
+        send: jest
+          .fn<Promise<void>, [{ text: string }]>()
+          .mockResolvedValue(undefined),
+      };
+      const localService = new AuthService(
+        appConfig,
+        auditService as unknown as AuditService,
+        localMailService as unknown as MailService,
+        captchaService as unknown as CaptchaService,
+        lockoutService as unknown as LockoutService,
+        sessionService as unknown as SessionService,
+        mfaService as unknown as MfaService,
+        statefulUsuarioRepo as unknown as Repository<Usuario>,
+        statefulTokenRepo as unknown as Repository<TokenVerificacion>,
+      );
+
+      return { localService, localMailService, usuario };
+    }
+
+    function extractCode(
+      sendMock: jest.Mock<Promise<void>, [{ text: string }]>,
+    ): string {
+      const lastCall = sendMock.mock.calls.at(-1);
+      const match = /código es (\d+)/.exec(lastCall?.[0]?.text ?? '');
+      if (!match) {
+        throw new Error(
+          'No se encontró un código en el correo enviado (prueba mal construida).',
+        );
+      }
+      return match[1];
+    }
+
+    it('verificación de correo: pedir un segundo código invalida el primero, aunque no haya expirado', async () => {
+      const { localService, localMailService } = buildStatefulReposAndService();
+
+      await localService.resendVerification({
+        correo: 'ana@example.com',
+        captcha: 'ok',
+      });
+      const primerCodigo = extractCode(localMailService.send);
+
+      await localService.resendVerification({
+        correo: 'ana@example.com',
+        captcha: 'ok',
+      });
+      const segundoCodigo = extractCode(localMailService.send);
+
+      expect(primerCodigo).not.toBe(segundoCodigo);
+
+      // El primer código, aunque todavía estaría dentro de sus 30 min de
+      // vigencia, ya no corresponde a ninguna fila: debe rechazarse.
+      await expect(
+        localService.verifyEmail({
+          correo: 'ana@example.com',
+          codigo: primerCodigo,
+        }),
+      ).rejects.toMatchObject({ response: { code: 'INVALID_CODE' } });
+
+      // El segundo (el vigente) sí debe funcionar.
+      await expect(
+        localService.verifyEmail({
+          correo: 'ana@example.com',
+          codigo: segundoCodigo,
+        }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('recuperación de contraseña: pedir un segundo código invalida el primero, aunque no haya expirado', async () => {
+      const { localService, localMailService, usuario } =
+        buildStatefulReposAndService();
+      usuario.activo = true;
+
+      await localService.forgotPassword({
+        correo: 'ana@example.com',
+        captcha: 'ok',
+      });
+      const primerCodigo = extractCode(localMailService.send);
+
+      await localService.forgotPassword({
+        correo: 'ana@example.com',
+        captcha: 'ok',
+      });
+      const segundoCodigo = extractCode(localMailService.send);
+
+      expect(primerCodigo).not.toBe(segundoCodigo);
+
+      await expect(
+        localService.resetPassword({
+          correo: 'ana@example.com',
+          codigo: primerCodigo,
+          nuevaPassword: 'Xk9#mPq2vL7zT4',
+          captcha: 'ok',
+        }),
+      ).rejects.toMatchObject({ response: { code: 'INVALID_CODE' } });
+
+      const result = await localService.resetPassword({
+        correo: 'ana@example.com',
+        codigo: segundoCodigo,
+        nuevaPassword: 'Xk9#mPq2vL7zT4',
+        captcha: 'ok',
+      });
+      expect(result.message).toMatch(/actualizada/);
+    });
+  });
 });

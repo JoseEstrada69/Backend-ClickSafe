@@ -6,16 +6,17 @@ import { IsNull, Not, Repository } from 'typeorm';
 import { AppConfigService } from '../config/app-config.service';
 import { Sesion, Usuario } from '../database/entities';
 import { AuditService } from '../audit/audit.service';
+import type { RequestMeta } from '../common/interfaces/request-meta.interface';
 import { TokensResponse } from './auth-responses.interface';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60; // 5.6
 const REFRESH_TOKEN_SLIDING_DAYS = 7;
 const REFRESH_TOKEN_ABSOLUTE_DAYS = 30;
 
-export interface RequestMeta {
-  ip?: string | null;
-  userAgent?: string | null;
-}
+// Re-exportado para no romper `import { RequestMeta } from './session.service'`
+// en los módulos que ya lo usaban; la definición canónica vive en common/
+// porque ahora también la usa el decorador @ClientInfo().
+export type { RequestMeta };
 
 /**
  * Sesiones y tokens (5.6). El access token es un JWT de 15 min; el
