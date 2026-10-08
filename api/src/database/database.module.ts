@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfigService } from '../config/app-config.service';
 import { ConfigModule } from '../config/config.module';
 import { ENTITIES, Sesion, Usuario } from './entities';
+import { MysqlSessionTimezoneInitializer } from './mysql-session-timezone.initializer';
 
 @Module({
   imports: [
@@ -33,6 +34,11 @@ import { ENTITIES, Sesion, Usuario } from './entities';
     // BitacoraAuditoria en AuditModule) cuando exista.
     TypeOrmModule.forFeature([Usuario, Sesion]),
   ],
+  // Fija la zona horaria de la sesión de MySQL a UTC en cada conexión del
+  // pool (ver mysql-session-timezone.initializer.ts). Nest instancia todos
+  // los providers de un módulo al arrancar, así que basta declararlo aquí:
+  // su onModuleInit corre solo, nadie necesita inyectarlo.
+  providers: [MysqlSessionTimezoneInitializer],
   exports: [TypeOrmModule],
 })
 export class DatabaseModule {}
