@@ -23,6 +23,7 @@ import { CatalogsModule } from './catalogs/catalogs.module';
 import { ReportsModule } from './reports/reports.module';
 import { CommentsModule } from './comments/comments.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ReportsModule,
     CommentsModule,
     NotificationsModule,
+    AdminModule,
     HealthModule,
   ],
   providers: [
