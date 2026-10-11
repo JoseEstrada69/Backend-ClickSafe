@@ -170,5 +170,9 @@ prueba en `clicksafe_db`, y nunca pueden borrar algo que sí te importa.
 
 ## Estado del proyecto
 
-En desarrollo por fases (ver sección 9 de `CLAUDE.md`). Actualmente: **Fase 2
-— Datos y servicios base**.
+En desarrollo por fases (ver sección 9 de `CLAUDE.md`). Completadas: Fases
+0-6 (base, seguridad, datos, auth, catálogos/reportes/evidencias/likes,
+comentarios/denuncias/notificaciones, admin). Alcance reducido en las
+Fases 4-6 por la fecha de entrega — ver la nota al inicio de la sección 7
+de `CLAUDE.md`. Falta la **Fase 7 — Calidad y entrega** (CI, CodeQL ya
+agregado, `dependabot.yml`, más pruebas).
