@@ -21,6 +21,8 @@ import { AuthModule } from './auth/auth.module';
 import { MeModule } from './me/me.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { ReportsModule } from './reports/reports.module';
+import { CommentsModule } from './comments/comments.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -104,6 +106,8 @@ import { ReportsModule } from './reports/reports.module';
     MeModule,
     CatalogsModule,
     ReportsModule,
+    CommentsModule,
+    NotificationsModule,
     HealthModule,
   ],
   providers: [
