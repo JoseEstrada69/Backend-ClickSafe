@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfigService } from '../config/app-config.service';
 import { ConfigModule } from '../config/config.module';
-import { ENTITIES, Usuario } from './entities';
+import { ENTITIES, Sesion, Usuario } from './entities';
+import { MysqlSessionTimezoneInitializer } from './mysql-session-timezone.initializer';
 
 @Module({
   imports: [
@@ -25,13 +26,19 @@ import { ENTITIES, Usuario } from './entities';
         timezone: 'Z',
       }),
     }),
-    // Usuario es la entidad transversal (auditoría, seed del admin, y la
-    // autenticación de la Fase 3): su repositorio se expone aquí para no
-    // repetir TypeOrmModule.forFeature([Usuario]) en cada módulo que la
-    // use. El resto de entidades las registra su propio módulo de feature
-    // (p. ej. BitacoraAuditoria en AuditModule) cuando exista.
-    TypeOrmModule.forFeature([Usuario]),
+    // Usuario y Sesion son transversales: AuditService, el seed del admin
+    // y JwtAuthGuard (verificación global de sesión revocada/usuario
+    // activo, 4.3) las necesitan. Se exponen aquí para no repetir
+    // TypeOrmModule.forFeature en cada módulo que las use. El resto de
+    // entidades las registra su propio módulo de feature (p. ej.
+    // BitacoraAuditoria en AuditModule) cuando exista.
+    TypeOrmModule.forFeature([Usuario, Sesion]),
   ],
+  // Fija la zona horaria de la sesión de MySQL a UTC en cada conexión del
+  // pool (ver mysql-session-timezone.initializer.ts). Nest instancia todos
+  // los providers de un módulo al arrancar, así que basta declararlo aquí:
+  // su onModuleInit corre solo, nadie necesita inyectarlo.
+  providers: [MysqlSessionTimezoneInitializer],
   exports: [TypeOrmModule],
 })
 export class DatabaseModule {}

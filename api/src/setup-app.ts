@@ -4,6 +4,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json } from 'express';
 import helmet from 'helmet';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
+import {
+  BEARER_AUTH_SCHEME_NAME,
+  MFA_TOKEN_SCHEME_NAME,
+} from './common/swagger/bearer-auth.constant';
 import { AppConfigService } from './config/app-config.service';
 
 /**
@@ -46,7 +50,14 @@ export function setupApp(
         .setTitle('ClickSafe API')
         .setDescription('API REST de ClickSafe')
         .setVersion('1.0')
-        .addBearerAuth()
+        .addBearerAuth(
+          { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+          BEARER_AUTH_SCHEME_NAME,
+        )
+        .addBearerAuth(
+          { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+          MFA_TOKEN_SCHEME_NAME,
+        )
         .build(),
     );
     SwaggerModule.setup('api/docs', app, document);

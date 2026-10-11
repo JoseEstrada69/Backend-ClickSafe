@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtModule, JwtService } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 import type { Request } from 'express';
@@ -10,11 +11,14 @@ import { ConfigModule } from './config/config.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { normalizeIp } from './common/utils/normalize-ip';
 import { HealthModule } from './health/health.module';
 import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './audit/audit.module';
 import { MailModule } from './mail/mail.module';
 import { StorageModule } from './storage/storage.module';
+import { AuthModule } from './auth/auth.module';
+import { MeModule } from './me/me.module';
 
 @Module({
   imports: [
@@ -59,6 +63,8 @@ import { StorageModule } from './storage/storage.module';
     // (verifyAsync), no aquí, para poder usar el mismo servicio con
     // distintos secretos (access vs. mfa) en fases futuras.
     JwtModule.register({ global: true }),
+    // Habilita @Cron() (usado por CaptchaService para borrar retos expirados, 5.2).
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [AppConfigService, JwtService],
@@ -84,7 +90,7 @@ import { StorageModule } from './storage/storage.module';
               return `user:${decoded.sub}`;
             }
           }
-          return `ip:${request.ip ?? 'unknown'}`;
+          return `ip:${normalizeIp(request.ip) ?? 'unknown'}`;
         },
       }),
     }),
@@ -92,6 +98,8 @@ import { StorageModule } from './storage/storage.module';
     AuditModule,
     MailModule,
     StorageModule,
+    AuthModule,
+    MeModule,
     HealthModule,
   ],
   providers: [

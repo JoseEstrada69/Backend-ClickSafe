@@ -34,20 +34,45 @@ export class AppConfigService {
     return this.configService.get('SWAGGER_ENABLED', { infer: true });
   }
 
-  get jwt(): { accessSecret: string; issuer: string; audience: string } {
+  get jwt(): {
+    accessSecret: string;
+    mfaSecret: string;
+    issuer: string;
+    audience: string;
+  } {
     return {
       accessSecret: this.configService.get('JWT_ACCESS_SECRET', {
         infer: true,
       }),
+      mfaSecret: this.configService.get('JWT_MFA_SECRET', { infer: true }),
       issuer: this.configService.get('JWT_ISSUER', { infer: true }),
       audience: this.configService.get('JWT_AUDIENCE', { infer: true }),
     };
+  }
+
+  get totpEncryptionKey(): string {
+    return this.configService.get('TOTP_ENCRYPTION_KEY', { infer: true });
+  }
+
+  get codeHmacKey(): string {
+    return this.configService.get('CODE_HMAC_KEY', { infer: true });
+  }
+
+  get captchaHmacKey(): string {
+    return this.configService.get('CAPTCHA_HMAC_KEY', { infer: true });
   }
 
   get throttle(): { ttlMs: number; limit: number } {
     return {
       ttlMs: this.configService.get('THROTTLE_TTL_MS', { infer: true }),
       limit: this.configService.get('THROTTLE_LIMIT', { infer: true }),
+    };
+  }
+
+  get throttleAuth(): { ttlMs: number; limit: number } {
+    return {
+      ttlMs: this.configService.get('THROTTLE_AUTH_TTL_MS', { infer: true }),
+      limit: this.configService.get('THROTTLE_AUTH_LIMIT', { infer: true }),
     };
   }
 

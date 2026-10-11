@@ -49,7 +49,12 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
 4. Crea el usuario de mínimo privilegio `clicksafe_api` (la API nunca se
    conecta como root). Los permisos exactos están comentados al final de
    `database/clicksafe_db.sql`; para desarrollo local (host `%` en vez de la
-   subred de producción):
+   subred de producción). El ejemplo asume el MySQL de
+   `infra/docker-compose.yml`; si en cambio tienes MySQL instalado
+   directamente en Windows (sin Docker) y la API se conecta a `127.0.0.1`,
+   usa `'clicksafe_api'@'127.0.0.1'` en vez de `'clicksafe_api'@'%'` en
+   cada línea (más restrictivo, y es el host real con el que MySQL ve
+   llegar esa conexión):
    ```powershell
    docker exec -i clicksafe-mysql mysql -uroot -p<MYSQL_ROOT_PASSWORD> -e "
    CREATE USER IF NOT EXISTS 'clicksafe_api'@'%' IDENTIFIED BY '<igual a DB_PASSWORD en api/.env>';
@@ -87,11 +92,81 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
    npm run seed:admin   # crea el primer admin (lee SEED_ADMIN_NOMBRE/CORREO del .env)
    npm run lint          # ESLint
    npm test              # pruebas unitarias (Jest)
-   npm run test:e2e      # pruebas end-to-end (Jest + supertest)
+   npm run test:e2e      # pruebas end-to-end (Jest + supertest); necesita api/.env.test, ver abajo
    npm run build          # compilar a dist/
    ```
    Con `SWAGGER_ENABLED=true` en `api/.env`, la documentación queda en
    `http://localhost:3000/api/docs`.
+
+## Base de datos para las pruebas e2e
+
+`npm run test:e2e` corre contra una base **separada** de la de desarrollo:
+`clicksafe_test`. Así las pruebas nunca escriben usuarios ni datos de
+prueba en `clicksafe_db`, y nunca pueden borrar algo que sí te importa.
+
+1. Crea la base `clicksafe_test` con el mismo esquema que `clicksafe_db`,
+   sin modificar `database/clicksafe_db.sql` (ese archivo ya fue probado y
+   siempre crea literalmente `clicksafe_db`): sustituye el nombre solo al
+   cargarlo.
+   ```powershell
+   # Con MySQL accesible directamente (sin Docker):
+   (Get-Content database/clicksafe_db.sql) -replace 'clicksafe_db', 'clicksafe_test' | mysql -uroot -p
+
+   # Con el MySQL de infra/docker-compose.yml:
+   (Get-Content database/clicksafe_db.sql) -replace 'clicksafe_db', 'clicksafe_test' | docker exec -i clicksafe-mysql mysql -uroot -p<MYSQL_ROOT_PASSWORD>
+   ```
+   Si usas un cliente gráfico (Workbench, DataGrip, etc.) sin soporte para
+   tuberías: guarda una copia de `database/clicksafe_db.sql` con `clicksafe_db`
+   reemplazado por `clicksafe_test` y ejecútala ahí; la copia no se versiona
+   (no la guardes dentro del repo).
+2. Crea un usuario **dedicado** a esta base, `clicksafe_api_test`, con los
+   mismos permisos mínimos que `clicksafe_api` tiene sobre `clicksafe_db`
+   (sección 4 arriba) pero apuntando a `clicksafe_test`. Usa una contraseña
+   distinta a la de `clicksafe_api`: si esta se filtra (por ejemplo, en un
+   entorno de CI menos cuidado), no debe servir para nada contra la base real.
+
+   El host del usuario depende de cómo corre tu MySQL: `'%'` (cualquier
+   host) solo tiene sentido si MySQL corre en un contenedor Docker al que
+   te conectas desde fuera (como en `infra/docker-compose.yml`). Si tienes
+   MySQL instalado localmente en Windows y la API se conecta a
+   `127.0.0.1`, el usuario debe crearse como `'clicksafe_api_test'@'127.0.0.1'`
+   (igual aplica a `clicksafe_api` en el paso 4, si tu instalación es local).
+   ```powershell
+   mysql -uroot -p -e "
+   CREATE USER IF NOT EXISTS 'clicksafe_api_test'@'127.0.0.1' IDENTIFIED BY '<contraseña distinta a la de clicksafe_api>';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_test.Usuario TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_test.Plataforma TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_test.Categoria_fraude TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, DELETE ON clicksafe_test.Captcha_usado TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_test.Sesion TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_test.Token_verificacion TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT ON clicksafe_test.Bitacora_auditoria TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_test.Reporte TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, DELETE ON clicksafe_test.Evidencia TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT ON clicksafe_test.Revision_reporte TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, DELETE ON clicksafe_test.Like_reporte TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_test.Comentario TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_test.Denuncia_comentario TO 'clicksafe_api_test'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_test.Notificacion TO 'clicksafe_api_test'@'127.0.0.1';
+   FLUSH PRIVILEGES;"
+   ```
+   (si usas Docker, antepón `docker exec -i clicksafe-mysql` igual que en el paso 4).
+3. Dentro de `api/`:
+   ```powershell
+   Copy-Item .env.test.example .env.test
+   ```
+   Edita `api/.env.test`: genera valores propios para los secretos (no
+   reutilices los de `api/.env`) y pon en `DB_PASSWORD` la contraseña de
+   `clicksafe_api_test` del paso 2. **`DB_NAME` debe quedar exactamente en
+   `clicksafe_test`** — si no, la API se niega a arrancar al correr las
+   pruebas (es a propósito, ver `src/config/env.schema.ts`).
+4. Corre las pruebas:
+   ```powershell
+   npm run test:e2e
+   ```
+   Antes de que Jest arranque, `npm run pretest:e2e` (automático) revisa que
+   `api/.env.test` exista y apunte a `clicksafe_test`; si no, falla de
+   inmediato con un mensaje claro, sin intentar conectarse a ninguna base.
 
 ## Estado del proyecto
 
