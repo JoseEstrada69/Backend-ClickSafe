@@ -19,6 +19,8 @@ import { MailModule } from './mail/mail.module';
 import { StorageModule } from './storage/storage.module';
 import { AuthModule } from './auth/auth.module';
 import { MeModule } from './me/me.module';
+import { CatalogsModule } from './catalogs/catalogs.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
   imports: [
@@ -100,6 +102,8 @@ import { MeModule } from './me/me.module';
     StorageModule,
     AuthModule,
     MeModule,
+    CatalogsModule,
+    ReportsModule,
     HealthModule,
   ],
   providers: [
