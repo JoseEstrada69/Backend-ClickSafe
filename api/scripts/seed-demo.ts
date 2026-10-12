@@ -2,6 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
+import { AppConfigService } from '../src/config/app-config.service';
+import { generateStrongPassword } from '../src/common/utils/generate-strong-password';
 import { hashPassword } from '../src/common/utils/password-hash';
 import {
   CategoriaFraude,
@@ -16,7 +18,6 @@ import {
 } from '../src/database/entities';
 
 const DEMO_EMAIL_SUFFIX = '@demo.clicksafe.local';
-const DEMO_PASSWORD = 'Demo1234!Seguro';
 
 /**
  * npm run seed:demo. Llena clicksafe_db con datos de ejemplo realistas
@@ -24,7 +25,13 @@ const DEMO_PASSWORD = 'Demo1234!Seguro';
  * sharp/evidencias: el alcance pedido es reportes, comentarios, likes,
  * denuncias y notificaciones, no imágenes). Se niega a correr si ya
  * existen usuarios demo (marcados por el dominio de correo
- * @demo.clicksafe.local), para no duplicar datos en cada corrida.
+ * @demo.clicksafe.local), para no duplicar datos en cada corrida, y
+ * también si NODE_ENV=production (esto es SOLO para demo/laboratorio).
+ *
+ * NUNCA crea un admin nuevo (eso sería una vía no documentada de volverse
+ * admin, sección 1): usa el admin que ya exista de `npm run seed:admin`
+ * para autoría de las revisiones de ejemplo. Si no hay ninguno, falla con
+ * un mensaje claro en vez de inventar uno.
  */
 async function run(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule, {
@@ -32,6 +39,15 @@ async function run(): Promise<void> {
   });
 
   try {
+    const appConfig = app.get(AppConfigService);
+    if (appConfig.isProduction) {
+      console.error(
+        'NODE_ENV=production: seed:demo es solo para desarrollo/laboratorio. No se creó nada.',
+      );
+      process.exitCode = 1;
+      return;
+    }
+
     const usuarioRepo = app.get<Repository<Usuario>>(
       getRepositoryToken(Usuario),
     );
@@ -71,9 +87,22 @@ async function run(): Promise<void> {
       return;
     }
 
-    const passwordHash = await hashPassword(DEMO_PASSWORD);
+    // El admin para autoría de las revisiones de ejemplo tiene que ya
+    // existir (seed:admin) — seed:demo nunca crea admins (sección 1: no
+    // hay forma pública/lateral de volverse admin).
+    const admin = await usuarioRepo.findOne({
+      where: { rol: 'admin', activo: true },
+      order: { idUsuario: 'ASC' },
+    });
+    if (!admin) {
+      console.error(
+        'No hay ningún admin activo. Corre primero `npm run seed:admin` y vuelve a intentar.',
+      );
+      process.exitCode = 1;
+      return;
+    }
 
-    // --- Usuarios (5 normales + 1 admin para poder revisar reportes) ---
+    // --- Usuarios normales, cada uno con su propia contraseña aleatoria ---
     const nombresUsuarios = [
       'Ana García',
       'Luis Fernández',
@@ -81,28 +110,28 @@ async function run(): Promise<void> {
       'Carlos Ruiz',
       'Sofía Hernández',
     ];
-    const usuarios = await usuarioRepo.save(
-      nombresUsuarios.map((nombre, i) =>
-        usuarioRepo.create({
+    const credenciales = await Promise.all(
+      nombresUsuarios.map(async (nombre, i) => {
+        const password = generateStrongPassword(18);
+        return {
           nombre,
           correo: `demo.usuario${i + 1}${DEMO_EMAIL_SUFFIX}`,
+          password,
+          passwordHash: await hashPassword(password),
+        };
+      }),
+    );
+    const usuarios = await usuarioRepo.save(
+      credenciales.map(({ nombre, correo, passwordHash }) =>
+        usuarioRepo.create({
+          nombre,
+          correo,
           correoVerificado: true,
           passwordHash,
           rol: 'usuario',
           activo: true,
         }),
       ),
-    );
-
-    const admin = await usuarioRepo.save(
-      usuarioRepo.create({
-        nombre: 'Admin Demo',
-        correo: `demo.admin${DEMO_EMAIL_SUFFIX}`,
-        correoVerificado: true,
-        passwordHash,
-        rol: 'admin',
-        activo: true,
-      }),
     );
 
     // --- Catálogos ya existentes (database/clicksafe_db.sql) ---
@@ -286,10 +315,13 @@ async function run(): Promise<void> {
 
     console.log('Datos de demo creados correctamente:');
     console.log(
-      `  Usuarios normales: ${usuarios.length} (contraseña: ${DEMO_PASSWORD})`,
+      '  Usuarios normales (contraseña aleatoria, solo se muestra aquí):',
     );
+    for (const { correo, password } of credenciales) {
+      console.log(`    ${correo}  /  ${password}`);
+    }
     console.log(
-      `  Admin demo: ${admin.correo} (contraseña: ${DEMO_PASSWORD}, requiere configurar 2FA en el primer login)`,
+      `  Revisiones de ejemplo autoría de: ${admin.correo} (admin ya existente)`,
     );
     console.log(
       `  Reportes: ${TOTAL_REPORTES} (10 pendientes, 7 validados, 3 rechazados)`,
