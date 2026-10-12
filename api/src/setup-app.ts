@@ -1,6 +1,6 @@
-import { ValidationPipe } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
 import { json } from 'express';
 import helmet from 'helmet';
 import { requestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -9,6 +9,31 @@ import {
   MFA_TOKEN_SCHEME_NAME,
 } from './common/swagger/bearer-auth.constant';
 import { AppConfigService } from './config/app-config.service';
+
+/**
+ * Único lugar donde se arma el documento OpenAPI: lo usan tanto
+ * setupApp() (Swagger en /api/docs cuando SWAGGER_ENABLED=true) como
+ * scripts/export-openapi.ts (docs/openapi.json), para que nunca queden
+ * desincronizados.
+ */
+export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
+  return SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('ClickSafe API')
+      .setDescription('API REST de ClickSafe')
+      .setVersion('1.0')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        BEARER_AUTH_SCHEME_NAME,
+      )
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        MFA_TOKEN_SCHEME_NAME,
+      )
+      .build(),
+  );
+}
 
 /**
  * Configuración de la app (4.1), extraída de main.ts para que los tests e2e
@@ -44,22 +69,6 @@ export function setupApp(
   );
 
   if (appConfig.swaggerEnabled) {
-    const document = SwaggerModule.createDocument(
-      app,
-      new DocumentBuilder()
-        .setTitle('ClickSafe API')
-        .setDescription('API REST de ClickSafe')
-        .setVersion('1.0')
-        .addBearerAuth(
-          { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-          BEARER_AUTH_SCHEME_NAME,
-        )
-        .addBearerAuth(
-          { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-          MFA_TOKEN_SCHEME_NAME,
-        )
-        .build(),
-    );
-    SwaggerModule.setup('api/docs', app, document);
+    SwaggerModule.setup('api/docs', app, buildOpenApiDocument(app));
   }
 }

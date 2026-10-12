@@ -66,6 +66,11 @@ const baseEnvSchema = z.object({
     .string()
     .min(32, 'CAPTCHA_HMAC_KEY debe tener al menos 32 caracteres'),
 
+  // Firma las URLs de evidencias (sección 6, punto 8): HMAC-SHA256(id:exp).
+  EVIDENCE_URL_SECRET: z
+    .string()
+    .min(32, 'EVIDENCE_URL_SECRET debe tener al menos 32 caracteres'),
+
   // Rate limit global (4.4): 100 peticiones/minuto por IP (o por usuario si hay token).
   THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60_000),
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(100),
@@ -73,6 +78,26 @@ const baseEnvSchema = z.object({
   // Rate limit de /auth/* (4.4): 5 peticiones/minuto por IP.
   THROTTLE_AUTH_TTL_MS: z.coerce.number().int().positive().default(60_000),
   THROTTLE_AUTH_LIMIT: z.coerce.number().int().positive().default(5),
+
+  // Rate limit de creación de reportes (4.4): 10/hora por usuario.
+  THROTTLE_REPORTS_TTL_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3_600_000),
+  THROTTLE_REPORTS_LIMIT: z.coerce.number().int().positive().default(10),
+
+  // Rate limit de comentarios (4.4): 30/hora por usuario.
+  THROTTLE_COMMENTS_TTL_MS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(3_600_000),
+  THROTTLE_COMMENTS_LIMIT: z.coerce.number().int().positive().default(30),
+
+  // Rate limit de denuncias de comentarios (4.4): 20/hora por usuario.
+  THROTTLE_FLAGS_TTL_MS: z.coerce.number().int().positive().default(3_600_000),
+  THROTTLE_FLAGS_LIMIT: z.coerce.number().int().positive().default(20),
 
   // Conexión a MySQL (2): la API se conecta como `clicksafe_api`, nunca como root.
   DB_HOST: z.string().min(1).default('127.0.0.1'),

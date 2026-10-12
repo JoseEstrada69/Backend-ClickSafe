@@ -97,7 +97,8 @@ código estático.
     admin. No se borran, se desactivan (`activa = FALSE`). Los desactivados
     no aparecen al crear reportes, pero los reportes viejos los conservan.
 11. **Dashboard admin**: estadísticas de reportes por plataforma (todas las
-    de `es_otra` agrupadas como "Otra"), por categoría, por estado y por mes.
+    de `es_otra` agrupadas como "Otra"), por categoría y por estado.
+    ~~y por mes~~ — **pospuesto** (alcance reducido, ver sección 7).
 12. **Correo**: no se usan servicios externos. En desarrollo se usa
     **Mailpit** (servidor SMTP local que atrapa los correos y los muestra en
     una interfaz web en `http://localhost:8025`). En la topología de red será
@@ -434,6 +435,17 @@ se revela al cliente.
 
 ## 7. Endpoints
 
+> **Alcance reducido (Fases 4-6)**: por la fecha límite de entrega, se
+> pospusieron el CRUD de evidencias sueltas (`POST`/`DELETE
+> /reports/:id/evidences`), la gestión de catálogos desde el panel
+> (`/admin/platforms`, `/admin/categories`), la creación de admins desde la
+> API (`POST /admin/admins`) y las estadísticas por mes de `/admin/stats`.
+> Nada de esto recorta seguridad: DTOs, control de propiedad, operaciones
+> atómicas, anonimato, rate limiting, procesamiento de imágenes con sharp,
+> URLs firmadas, prevención de SSRF, bitácora de admin y paginación siguen
+> igual que lo descrito abajo. Quedan marcados con ~~tachado~~ en las
+> tablas de esta sección.
+
 Todos bajo `/api/v1`. 🔓 = `@Public()`. 👑 = admin + 2FA. El resto requiere
 usuario autenticado. Todas las respuestas documentadas en Swagger con sus DTOs.
 
@@ -486,10 +498,10 @@ usuario autenticado. Todas las respuestas documentadas en Swagger con sus DTOs.
 | GET | `/reports` | feed paginado. Query: `q` (texto, máx. 100, busca en `titulo`, `descripcion` y `url_publicacion` con `LIKE` parametrizado **escapando `%`, `_` y `\`**), `plataforma` (id), `categoria` (id), `estado`, `orden` = `recientes` \| `populares` (enum), `page`, `limit` |
 | GET | `/reports/:id` | detalle |
 | POST | `/reports` | `multipart/form-data`: `titulo`, `descripcion`, `urlPublicacion`, `plataformaId`, `plataformaOtra?`, `categoriaId`, `anonimo` (`"true"`/`"false"`) + hasta 5 imágenes en el campo `evidencias` |
-| PATCH | `/reports/:id` | JSON con cualquiera de: `titulo`, `descripcion`, `urlPublicacion`, `plataformaId`, `plataformaOtra`, `categoriaId`, `anonimo`. Autor + `pendiente` (atómico) |
+| PATCH | `/reports/:id` | JSON con cualquiera de: `titulo`, `descripcion`, `urlPublicacion`, `plataformaId`, `plataformaOtra`, `categoriaId`, `anonimo` (**solo texto/catálogo/anonimato**, ver nota de evidencias abajo). Autor + `pendiente` (atómico) |
 | DELETE | `/reports/:id` | autor + `pendiente` (atómico) |
-| POST | `/reports/:id/evidences` | autor + `pendiente`, respetando máx. 5 en total |
-| DELETE | `/reports/:id/evidences/:evidenceId` | autor + `pendiente` |
+| ~~POST~~ | ~~`/reports/:id/evidences`~~ | **pospuesto** (alcance reducido): las evidencias solo se suben al crear el reporte (`POST /reports`), hasta 5 |
+| ~~DELETE~~ | ~~`/reports/:id/evidences/:evidenceId`~~ | **pospuesto** (alcance reducido) |
 | GET 🔓 | `/evidences/:id?exp&sig` | URL firmada (sección 6) |
 | POST | `/reports/:id/like` | idempotente; no a reporte propio |
 | DELETE | `/reports/:id/like` | idempotente |
@@ -555,9 +567,9 @@ quitar. Nunca `total_likes = <valor calculado en Node>` (condición de carrera).
 | PATCH | `/admin/comments/:id` | `{accion: "confirmar" \| "restaurar"}` |
 | GET | `/admin/users` | paginado, búsqueda por nombre/correo |
 | PATCH | `/admin/users/:id/status` | `{activo}`; no a sí mismo; no dejar el sistema sin admins activos; revoca sesiones |
-| POST | `/admin/admins` | `{nombre, correo, totp}` — **re-autenticación**: exige un código TOTP actual del admin que crea. Crea la cuenta con contraseña inutilizable + `correo_verificado = TRUE` y envía un código de recuperación para que el nuevo admin defina su contraseña (nadie conoce la contraseña de otro). Auditado |
-| GET/POST/PATCH | `/admin/platforms`, `/admin/categories` | alta, edición, activar/desactivar. Sin DELETE |
-| GET | `/admin/stats` | sección 1, regla 11 |
+| ~~POST~~ | ~~`/admin/admins`~~ | **pospuesto** (alcance reducido): por ahora el único admin se crea con `npm run seed:admin` |
+| ~~GET/POST/PATCH~~ | ~~`/admin/platforms`, `/admin/categories`~~ | **pospuesto** (alcance reducido): los catálogos ya vienen cargados en `database/clicksafe_db.sql`; `GET /platforms`/`GET /categories` siguen funcionando para leerlos |
+| GET | `/admin/stats` | sección 1, regla 11 (sin agrupación por mes — pospuesta) |
 | GET | `/admin/audit-log` | paginado, filtros por acción, usuario y fechas |
 
 ---

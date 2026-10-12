@@ -1,0 +1,2801 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/auth/captcha": {
+      "get": {
+        "operationId": "AuthController_getCaptcha",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Reto proof-of-work (5.2). Resuélvelo y manda el resultado en el campo `captcha`."
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Respuesta idéntica exista o no el correo (previene enumeración de usuarios, 5.3)."
+          },
+          "400": {
+            "description": "Captcha inválido/expirado (CAPTCHA_INVALID), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Captcha inválido/expirado (CAPTCHA_INVALID), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Correo marcado como verificado."
+          },
+          "400": {
+            "description": "Código inválido o expirado (INVALID_CODE), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Código inválido o expirado (INVALID_CODE), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "INVALID_CODE"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "operationId": "AuthController_resendVerification",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Respuesta idéntica exista o no el correo."
+          },
+          "400": {
+            "description": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CAPTCHA_INVALID"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Usuario normal: {accessToken, refreshToken, expiresIn}. Admin: {mfaRequired|mfaSetupRequired, mfaToken} (5.4)."
+          },
+          "400": {
+            "description": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CAPTCHA_INVALID"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas (correo, contraseña o cuenta bloqueada).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas (correo, contraseña o cuenta bloqueada).",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El correo aún no se verificó.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "El correo aún no se verificó.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "EMAIL_NOT_VERIFIED"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/setup": {
+      "post": {
+        "operationId": "AuthController_setup2fa",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Secreto generado: { otpauthUri, qrCodeDataUrl } (5.5)."
+          },
+          "401": {
+            "description": "Falta el token, o es inválido/expiró (mfaToken de setup o access token de admin).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Falta el token, o es inválido/expiró (mfaToken de setup o access token de admin).",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          },
+          {
+            "mfa-token": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/enable": {
+      "post": {
+        "operationId": "AuthController_enable2fa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaEnableDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "2FA activado."
+          },
+          "400": {
+            "description": "Todavía no se llamó a /2fa/setup, o el código no tiene el formato esperado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Todavía no se llamó a /2fa/setup, o el código no tiene el formato esperado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token inválido/expirado, código incorrecto, o cuenta bloqueada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Token inválido/expirado, código incorrecto, o cuenta bloqueada.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          },
+          {
+            "mfa-token": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/verify": {
+      "post": {
+        "operationId": "AuthController_verify2fa",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaVerifyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Código correcto: se emite la sesión completa, {accessToken, refreshToken, expiresIn}."
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "mfaToken inválido/expirado, código incorrecto, o cuenta bloqueada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "mfaToken inválido/expirado, código incorrecto, o cuenta bloqueada.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nuevo par {accessToken, refreshToken, expiresIn} (rotación, 5.6)."
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Refresh token inválido, expirado, ya reemplazado (reuso detectado, revoca toda la familia), o usuario inactivo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Refresh token inválido, expirado, ya reemplazado (reuso detectado, revoca toda la familia), o usuario inactivo.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sesión actual revocada."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout-all": {
+      "post": {
+        "operationId": "AuthController_logoutAll",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Todas las sesiones del usuario revocadas."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Respuesta idéntica exista o no el correo (5.7)."
+          },
+          "400": {
+            "description": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CAPTCHA_INVALID"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contraseña cambiada, sesiones revocadas (5.7)."
+          },
+          "400": {
+            "description": "Captcha inválido/expirado (CAPTCHA_INVALID), código inválido/expirado (INVALID_CODE), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Captcha inválido/expirado (CAPTCHA_INVALID), código inválido/expirado (INVALID_CODE), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "operationId": "MeController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Perfil del usuario autenticado: nombre, correo, rol, fechaRegistro, totpActivo."
+          },
+          "401": {
+            "description": "Token requerido, inválido, expirado, o sesión revocada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Token requerido, inválido, expirado, o sesión revocada.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      },
+      "patch": {
+        "operationId": "MeController_updateMe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil actualizado."
+          },
+          "400": {
+            "description": "El nombre no tiene un formato válido (1 a 100 caracteres).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "El nombre no tiene un formato válido (1 a 100 caracteres).",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token requerido, inválido, expirado, o sesión revocada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Token requerido, inválido, expirado, o sesión revocada.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/v1/me/password": {
+      "patch": {
+        "operationId": "MeController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Contraseña cambiada; se revocan las demás sesiones."
+          },
+          "400": {
+            "description": "La nueva contraseña es débil (PASSWORD_WEAK) o no tiene el formato esperado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "La nueva contraseña es débil (PASSWORD_WEAK) o no tiene el formato esperado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token requerido, inválido, expirado, o sesión revocada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Token requerido, inválido, expirado, o sesión revocada.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Me"
+        ]
+      }
+    },
+    "/api/v1/platforms": {
+      "get": {
+        "operationId": "CatalogsController_listPlatforms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Plataformas activas, para elegir al crear un reporte."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "operationId": "CatalogsController_listCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Categorías de fraude activas."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/v1/reports": {
+      "get": {
+        "operationId": "ReportsController_getFeed",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Feed paginado de reportes."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      },
+      "post": {
+        "operationId": "ReportsController_createReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "titulo": {
+                    "type": "string"
+                  },
+                  "descripcion": {
+                    "type": "string"
+                  },
+                  "urlPublicacion": {
+                    "type": "string"
+                  },
+                  "plataformaId": {
+                    "type": "integer"
+                  },
+                  "plataformaOtra": {
+                    "type": "string"
+                  },
+                  "categoriaId": {
+                    "type": "integer"
+                  },
+                  "anonimo": {
+                    "type": "string",
+                    "enum": [
+                      "true",
+                      "false"
+                    ]
+                  },
+                  "evidencias": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reporte creado."
+          },
+          "400": {
+            "description": "Catálogo inactivo (CATALOG_INACTIVE), falta plataformaOtra (PLATFORM_OTHER_REQUIRED), más de 5 imágenes (EVIDENCE_LIMIT), imagen inválida (INVALID_IMAGE), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Catálogo inactivo (CATALOG_INACTIVE), falta plataformaOtra (PLATFORM_OTHER_REQUIRED), más de 5 imágenes (EVIDENCE_LIMIT), imagen inválida (INVALID_IMAGE), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}": {
+      "get": {
+        "operationId": "ReportsController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle de un reporte."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      },
+      "patch": {
+        "operationId": "ReportsController_updateReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reporte actualizado."
+          },
+          "400": {
+            "description": "Reporte ya revisado (REPORT_NOT_EDITABLE), catálogo inactivo (CATALOG_INACTIVE), falta plataformaOtra (PLATFORM_OTHER_REQUIRED), o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Reporte ya revisado (REPORT_NOT_EDITABLE), catálogo inactivo (CATALOG_INACTIVE), falta plataformaOtra (PLATFORM_OTHER_REQUIRED), o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "REPORT_NOT_EDITABLE"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      },
+      "delete": {
+        "operationId": "ReportsController_deleteReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Reporte borrado."
+          },
+          "400": {
+            "description": "El reporte ya fue revisado y no se puede borrar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "El reporte ya fue revisado y no se puede borrar.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "REPORT_NOT_EDITABLE"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/like": {
+      "post": {
+        "operationId": "ReportsController_like",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ totalLikes, likedByMe }"
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No puedes dar like a tu propio reporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "No puedes dar like a tu propio reporte.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "OWN_REPORT"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      },
+      "delete": {
+        "operationId": "ReportsController_unlike",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ totalLikes, likedByMe }"
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/evidences/{id}": {
+      "get": {
+        "operationId": "EvidencesController_getEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "exp",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sig",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Imagen de la evidencia (WebP)."
+          }
+        },
+        "tags": [
+          "Evidences"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/comments": {
+      "get": {
+        "operationId": "ReportCommentsController_listComments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comentarios visibles de un reporte, paginados."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReportComments"
+        ]
+      },
+      "post": {
+        "operationId": "ReportCommentsController_createComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Comentario creado."
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "ReportComments"
+        ]
+      }
+    },
+    "/api/v1/comments/{id}": {
+      "delete": {
+        "operationId": "CommentsController_deleteComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Comentario borrado (lógicamente)."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Comments"
+        ]
+      }
+    },
+    "/api/v1/comments/{id}/flags": {
+      "post": {
+        "operationId": "CommentsController_createFlag",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Denuncia registrada."
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No puedes denunciar tu propio comentario.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "No puedes denunciar tu propio comentario.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "OWN_COMMENT"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Comments"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Notificaciones propias, paginadas."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_unreadCount",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "{ count }"
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Notificación marcada como leída."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "patch": {
+        "operationId": "NotificationsController_markAllRead",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Todas las notificaciones marcadas como leídas."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "operationId": "AdminController_listReports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cola de reportes (por defecto, pendientes), con autor real."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}/review": {
+      "post": {
+        "operationId": "AdminController_reviewReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reporte revisado."
+          },
+          "400": {
+            "description": "El reporte ya fue revisado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "El reporte ya fue revisado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "REPORT_NOT_EDITABLE"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "No puedes revisar tu propio reporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "No puedes revisar tu propio reporte.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "OWN_REPORT"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}/evidences/{evidenceId}": {
+      "delete": {
+        "operationId": "AdminController_deleteEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "evidenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Evidencia eliminada."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/comments/flagged": {
+      "get": {
+        "operationId": "AdminController_listFlaggedComments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Comentarios ocultos automáticamente o con denuncias pendientes."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/comments/{id}": {
+      "patch": {
+        "operationId": "AdminController_moderateComment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerateCommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Comentario moderado."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminController_listUsers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Usuarios paginados, con búsqueda por nombre/correo."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/status": {
+      "patch": {
+        "operationId": "AdminController_updateUserStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Estado del usuario actualizado."
+          },
+          "400": {
+            "description": "No puedes cambiar tu propio estado, o dejarías el sistema sin admins activos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "No puedes cambiar tu propio estado, o dejarías el sistema sin admins activos.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/stats": {
+      "get": {
+        "operationId": "AdminController_getStats",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Estadísticas por plataforma (Otra agrupada), categoría y estado."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-log": {
+      "get": {
+        "operationId": "AdminController_getAuditLog",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Bitácora de auditoría, paginada y filtrable."
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "ClickSafe API",
+    "description": "API REST de ClickSafe",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "access-token": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "mfa-token": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ResendVerificationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "MfaEnableDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "MfaVerifyDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RefreshDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateMeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateReportDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCommentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateFlagDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ReviewReportDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ModerateCommentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateUserStatusDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

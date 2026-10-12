@@ -62,6 +62,10 @@ export class AppConfigService {
     return this.configService.get('CAPTCHA_HMAC_KEY', { infer: true });
   }
 
+  get evidenceUrlSecret(): string {
+    return this.configService.get('EVIDENCE_URL_SECRET', { infer: true });
+  }
+
   get throttle(): { ttlMs: number; limit: number } {
     return {
       ttlMs: this.configService.get('THROTTLE_TTL_MS', { infer: true }),
@@ -73,6 +77,37 @@ export class AppConfigService {
     return {
       ttlMs: this.configService.get('THROTTLE_AUTH_TTL_MS', { infer: true }),
       limit: this.configService.get('THROTTLE_AUTH_LIMIT', { infer: true }),
+    };
+  }
+
+  get throttleReports(): { ttlMs: number; limit: number } {
+    return {
+      ttlMs: this.configService.get('THROTTLE_REPORTS_TTL_MS', {
+        infer: true,
+      }),
+      limit: this.configService.get('THROTTLE_REPORTS_LIMIT', {
+        infer: true,
+      }),
+    };
+  }
+
+  get throttleComments(): { ttlMs: number; limit: number } {
+    return {
+      ttlMs: this.configService.get('THROTTLE_COMMENTS_TTL_MS', {
+        infer: true,
+      }),
+      limit: this.configService.get('THROTTLE_COMMENTS_LIMIT', {
+        infer: true,
+      }),
+    };
+  }
+
+  get throttleFlags(): { ttlMs: number; limit: number } {
+    return {
+      ttlMs: this.configService.get('THROTTLE_FLAGS_TTL_MS', {
+        infer: true,
+      }),
+      limit: this.configService.get('THROTTLE_FLAGS_LIMIT', { infer: true }),
     };
   }
 

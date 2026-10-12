@@ -19,4 +19,7 @@ export type AuditAction =
   | 'usuario_suspendido'
   | 'usuario_reactivado'
   | 'admin_creado'
-  | 'catalogo_modificado';
+  | 'catalogo_modificado'
+  // Agregada en Fase 6: DELETE /admin/reports/:id/evidences/:evidenceId
+  // (sección 6, punto 8) no tenía una acción dedicada en la lista original.
+  | 'evidencia_eliminada';

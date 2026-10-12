@@ -7,6 +7,7 @@ describe('validateEnv', () => {
     TOTP_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
     CODE_HMAC_KEY: 'c'.repeat(32),
     CAPTCHA_HMAC_KEY: 'd'.repeat(32),
+    EVIDENCE_URL_SECRET: 'e'.repeat(32),
     DB_PASSWORD: 'db-password-de-prueba',
   };
 

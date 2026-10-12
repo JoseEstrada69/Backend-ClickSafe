@@ -1,0 +1,35 @@
+[Unit]
+Description=ClickSafe API (NestJS)
+After=network.target
+Documentation=https://github.com/JoseEstrada69/Backend-ClickSafe/blob/main/docs/despliegue.md
+
+[Service]
+Type=simple
+# Usuario sin privilegios dedicado al servicio (docs/despliegue.md crea
+# "clicksafe" sin shell de login). Nunca correr la API como root.
+User=clicksafe
+Group=clicksafe
+
+WorkingDirectory=/opt/clicksafe/api
+# Variables reales inyectadas por el entorno, NO por un .env leído por la
+# app (NODE_ENV=production hace que ConfigModule ignore cualquier .env,
+# sección 4.2) — este archivo sí lo lee systemd, antes de arrancar node.
+EnvironmentFile=/etc/clicksafe/api.env
+ExecStart=/usr/bin/node dist/main.js
+
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Mínimo privilegio también a nivel de sistema operativo.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+# Único directorio con permiso de escritura fuera del WorkingDirectory:
+# STORAGE_DIR en api/.env.production.example debe apuntar aquí.
+ReadWritePaths=/var/lib/clicksafe/storage
+
+[Install]
+WantedBy=multi-user.target
