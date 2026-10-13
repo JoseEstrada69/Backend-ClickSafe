@@ -36,6 +36,7 @@ import type { StorageService } from '../storage/storage.service.interface';
 import {
   AdminCategoryResponse,
   AdminPlatformResponse,
+  AdminReportDetailResponse,
   AdminReportResponse,
   AdminStatsMonthEntry,
   AdminStatsResponse,
@@ -148,6 +149,70 @@ export class AdminService {
       page: query.page,
       limit: query.limit,
       total,
+    };
+  }
+
+  /**
+   * GET /admin/reports/:id (sección 7): detalle de cualquier reporte, sin
+   * filtrar por estado (a diferencia de la cola). `esMio` es informativo
+   * nada más — la restricción real de "no revisar lo propio" vive en
+   * reviewReport, no aquí.
+   */
+  async getReportById(
+    idReporte: number,
+    adminId: number,
+  ): Promise<AdminReportDetailResponse> {
+    const reporte = await this.reporteRepo.findOne({
+      where: { idReporte },
+      relations: { usuario: true, plataforma: true, categoria: true },
+    });
+    if (!reporte) {
+      throw new NotFoundException();
+    }
+
+    const [evidencias, revision] = await Promise.all([
+      this.evidenciaRepo.find({
+        where: { idReporte },
+        order: { idEvidencia: 'ASC' },
+      }),
+      this.revisionRepo.findOne({
+        where: { idReporte },
+        order: { fechaRevision: 'DESC' },
+      }),
+    ]);
+
+    return {
+      id: reporte.idReporte,
+      titulo: reporte.titulo,
+      descripcion: reporte.descripcion,
+      urlPublicacion: reporte.urlPublicacion,
+      plataforma: {
+        id: reporte.plataforma.idPlataforma,
+        nombre: reporte.plataforma.nombre,
+      },
+      plataformaOtra: reporte.plataformaOtra,
+      categoria: {
+        id: reporte.categoria.idCategoria,
+        nombre: reporte.categoria.nombre,
+      },
+      estado: reporte.estado,
+      anonimo: reporte.anonimo,
+      autor: { nombre: reporte.usuario.nombre, correo: reporte.usuario.correo },
+      totalLikes: reporte.totalLikes,
+      evidencias: evidencias.map((e) => ({
+        id: e.idEvidencia,
+        url: this.evidenceUrlService.buildSignedPath(e.idEvidencia),
+      })),
+      fechaCreacion: reporte.fechaCreacion.toISOString(),
+      fechaActualizacion: reporte.fechaActualizacion.toISOString(),
+      revision: revision
+        ? {
+            decision: revision.decision,
+            comentario: revision.comentario,
+            fecha: revision.fechaRevision.toISOString(),
+          }
+        : null,
+      esMio: reporte.idUsuario === adminId,
     };
   }
 
@@ -744,7 +809,9 @@ export class AdminService {
   async getAuditLog(
     query: AuditLogQueryDto,
   ): Promise<PaginatedResponse<AuditLogEntryResponse>> {
-    const qb = this.bitacoraRepo.createQueryBuilder('b');
+    const qb = this.bitacoraRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.usuario', 'usuario');
     if (query.accion) {
       qb.andWhere('b.accion = :accion', { accion: query.accion });
     }
@@ -767,6 +834,9 @@ export class AdminService {
         id: row.idEvento,
         fecha: row.fecha.toISOString(),
         idUsuario: row.idUsuario,
+        usuario: row.usuario
+          ? { nombre: row.usuario.nombre, correo: row.usuario.correo }
+          : null,
         accion: row.accion,
         resultado: row.resultado,
         recursoTipo: row.recursoTipo,

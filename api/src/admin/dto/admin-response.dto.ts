@@ -3,6 +3,7 @@ import type {
   EstadoReporte,
   MotivoDenuncia,
 } from '../../database/entities';
+import { ReportRevisionResponse } from '../../reports/dto/report-response.dto';
 
 export class AdminUserRefResponse {
   nombre!: string;
@@ -40,6 +41,12 @@ export class AdminReportResponse {
   evidencias!: AdminEvidenceRefResponse[];
   fechaCreacion!: string;
   fechaActualizacion!: string;
+}
+
+/** GET /admin/reports/:id (sección 7): detalle con revisión (si ya la tiene) y esMio (si el admin es el autor). */
+export class AdminReportDetailResponse extends AdminReportResponse {
+  revision!: ReportRevisionResponse | null;
+  esMio!: boolean;
 }
 
 export class FlaggedCommentResponse {
@@ -110,6 +117,8 @@ export class AuditLogEntryResponse {
   id!: string;
   fecha!: string;
   idUsuario!: number | null;
+  /** null cuando el evento no tiene usuario asociado (p. ej. login con correo inexistente). */
+  usuario!: AdminUserRefResponse | null;
   accion!: string;
   resultado!: 'exito' | 'fallo';
   recursoTipo!: string | null;

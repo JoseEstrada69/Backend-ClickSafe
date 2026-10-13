@@ -2853,6 +2853,86 @@
         ]
       }
     },
+    "/api/v1/admin/reports/{id}": {
+      "get": {
+        "operationId": "AdminController_getReportById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle de un reporte, con autor real, evidencias firmadas y la revisión si ya la tiene.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminReportDetailResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/reports/{id}/review": {
       "post": {
         "operationId": "AdminController_reviewReport",
@@ -5233,6 +5313,92 @@
           "fechaActualizacion"
         ]
       },
+      "AdminReportDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "urlPublicacion": {
+            "type": "string"
+          },
+          "plataforma": {
+            "$ref": "#/components/schemas/AdminReportPlatformRefResponse"
+          },
+          "plataformaOtra": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/AdminReportCategoryRefResponse"
+          },
+          "estado": {
+            "enum": [
+              "pendiente",
+              "validado",
+              "rechazado"
+            ],
+            "type": "string"
+          },
+          "anonimo": {
+            "type": "boolean"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/AdminUserRefResponse"
+          },
+          "totalLikes": {
+            "type": "number"
+          },
+          "evidencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminEvidenceRefResponse"
+            }
+          },
+          "fechaCreacion": {
+            "type": "string"
+          },
+          "fechaActualizacion": {
+            "type": "string"
+          },
+          "revision": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRevisionResponse"
+              }
+            ]
+          },
+          "esMio": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "descripcion",
+          "urlPublicacion",
+          "plataforma",
+          "plataformaOtra",
+          "categoria",
+          "estado",
+          "anonimo",
+          "autor",
+          "totalLikes",
+          "evidencias",
+          "fechaCreacion",
+          "fechaActualizacion",
+          "revision",
+          "esMio"
+        ]
+      },
       "ReviewReportDto": {
         "type": "object",
         "properties": {
@@ -5617,6 +5783,16 @@
             "type": "number",
             "nullable": true
           },
+          "usuario": {
+            "nullable": true,
+            "description": "null cuando el evento no tiene usuario asociado (p. ej. login con correo inexistente).",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminUserRefResponse"
+              }
+            ]
+          },
           "accion": {
             "type": "string"
           },
@@ -5653,6 +5829,7 @@
           "id",
           "fecha",
           "idUsuario",
+          "usuario",
           "accion",
           "resultado",
           "recursoTipo",
