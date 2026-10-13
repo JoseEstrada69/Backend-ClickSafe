@@ -3,14 +3,18 @@ import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import { SessionService } from '../auth/session.service';
+import { CommentsService } from '../comments/comments.service';
 import { hashPassword } from '../common/utils/password-hash';
 import { Usuario } from '../database/entities';
+import { ReportsService } from '../reports/reports.service';
 import { MeService } from './me.service';
 
 describe('MeService', () => {
   let service: MeService;
   let auditService: { log: jest.Mock };
   let sessionService: { revokeAllExceptCurrent: jest.Mock };
+  let reportsService: { getMyReports: jest.Mock };
+  let commentsService: { listMyComments: jest.Mock };
   let usuarioRepo: { findOne: jest.Mock; update: jest.Mock };
 
   const buildUsuario = (overrides: Partial<Usuario> = {}): Usuario =>
@@ -28,11 +32,15 @@ describe('MeService', () => {
   beforeEach(() => {
     auditService = { log: jest.fn() };
     sessionService = { revokeAllExceptCurrent: jest.fn() };
+    reportsService = { getMyReports: jest.fn() };
+    commentsService = { listMyComments: jest.fn() };
     usuarioRepo = { findOne: jest.fn(), update: jest.fn() };
 
     service = new MeService(
       auditService as unknown as AuditService,
       sessionService as unknown as SessionService,
+      reportsService as unknown as ReportsService,
+      commentsService as unknown as CommentsService,
       usuarioRepo as unknown as Repository<Usuario>,
     );
   });

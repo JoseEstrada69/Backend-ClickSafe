@@ -7,7 +7,7 @@ import { AppConfigService } from '../config/app-config.service';
 import { Sesion, Usuario } from '../database/entities';
 import { AuditService } from '../audit/audit.service';
 import type { RequestMeta } from '../common/interfaces/request-meta.interface';
-import { TokensResponse } from './auth-responses.interface';
+import { TokensResponse } from './dto/auth-responses.dto';
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60; // 5.6
 const REFRESH_TOKEN_SLIDING_DAYS = 7;

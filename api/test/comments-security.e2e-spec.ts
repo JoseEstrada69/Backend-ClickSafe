@@ -197,4 +197,22 @@ describe('Comments (e2e) — seguridad', () => {
       'ALREADY_FLAGGED',
     );
   });
+
+  it('la forma JSON de un comentario no cambió al convertir la interfaz de respuesta a clase (OpenAPI)', async () => {
+    const usuarioRepo = usuarioRepoFrom(app);
+    const reportOwner = await createVerifiedUser(app, usuarioRepo);
+    const commenter = await createVerifiedUser(app, usuarioRepo);
+    const reportId = await createReport(reportOwner.accessToken);
+
+    const response = await request(app.getHttpServer() as App)
+      .post(`/api/v1/reports/${reportId}/comments`)
+      .set('Authorization', `Bearer ${commenter.accessToken}`)
+      .send({ contenido: 'Comentario de prueba de forma', anonimo: false });
+
+    expect(response.status).toBe(201);
+    const body = response.body as Record<string, unknown>;
+    expect(Object.keys(body).sort()).toEqual(
+      ['id', 'contenido', 'anonimo', 'autor', 'esMio', 'fechaCreacion'].sort(),
+    );
+  });
 });

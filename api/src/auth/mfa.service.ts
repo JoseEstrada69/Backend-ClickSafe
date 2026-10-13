@@ -15,7 +15,7 @@ import {
   MfaChallengeResponse,
   Setup2faResponse,
   TokensResponse,
-} from './auth-responses.interface';
+} from './dto/auth-responses.dto';
 import type { MfaTokenPayload } from './interfaces/mfa-token-payload.interface';
 import { LockoutService } from './lockout.service';
 import { RequestMeta, SessionService } from './session.service';
@@ -181,6 +181,44 @@ export class MfaService {
     });
 
     return this.sessionService.issueSession(usuario, meta);
+  }
+
+  /**
+   * Reautenticación paso a paso con el TOTP del propio admin que llama
+   * (nunca el del usuario sobre el que se actúa) para una acción sensible
+   * como crear otro admin (sección 7/8, separación de funciones). Misma
+   * lógica que enable2fa/verify2fa: bloqueo progresivo y anti-reuso de
+   * contador, pero sin tocar totpActivo.
+   */
+  async reauthenticateAdmin(
+    usuario: Usuario,
+    codigo: string,
+    meta: RequestMeta = {},
+  ): Promise<void> {
+    if (!usuario.totpActivo || !usuario.totpSecreto) {
+      throw new UnauthorizedException('Código inválido');
+    }
+    if (this.lockoutService.isLocked(usuario)) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    const { valid, counter } = this.checkTotpCode(usuario, codigo);
+    if (!valid) {
+      await this.lockoutService.registerFailedAttempt(usuario);
+      await this.auditService.log({
+        idUsuario: usuario.idUsuario,
+        accion: '2fa_fallo',
+        resultado: 'fallo',
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      });
+      throw new UnauthorizedException('Código inválido');
+    }
+
+    await this.usuarioRepo.update(usuario.idUsuario, {
+      totpUltimoContador: String(counter),
+    });
+    await this.lockoutService.resetLockout(usuario.idUsuario);
   }
 
   private checkTotpCode(

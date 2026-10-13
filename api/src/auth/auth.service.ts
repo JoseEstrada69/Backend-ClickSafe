@@ -28,7 +28,7 @@ import {
   GenericMessageResponse,
   MfaChallengeResponse,
   TokensResponse,
-} from './auth-responses.interface';
+} from './dto/auth-responses.dto';
 import { LockoutService } from './lockout.service';
 import { MfaService } from './mfa.service';
 import { RequestMeta, SessionService } from './session.service';
@@ -328,6 +328,15 @@ export class AuthService {
     });
 
     return { message: 'Contraseña actualizada correctamente.' };
+  }
+
+  /**
+   * Usado por AdminService al crear otro admin (sección 7/8): la cuenta
+   * nace con una contraseña inutilizable que nadie conserva, así que el
+   * nuevo admin necesita este mismo código de 5.7 para definir la suya.
+   */
+  async sendPasswordRecoveryCode(usuario: Usuario): Promise<void> {
+    await this.sendVerificationCode(usuario, 'recuperacion_password');
   }
 
   private async requireValidCaptcha(captcha: string): Promise<void> {

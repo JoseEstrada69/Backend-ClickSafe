@@ -12,8 +12,8 @@ import { Trim } from '../../common/decorators/trim.decorator';
 import { IsNoControlChars } from '../../common/validators/no-control-chars.validator';
 
 /**
- * PATCH /reports/:id (JSON): solo campos de texto, catálogo y anonimato
- * (sección 7, alcance reducido — las evidencias solo se suben al crear).
+ * PATCH /reports/:id (JSON): solo campos de texto, catálogo y anonimato.
+ * Las evidencias se administran aparte (POST/DELETE /reports/:id/evidences).
  * Todos opcionales: se actualiza únicamente lo que venga en el body.
  */
 export class UpdateReportDto {

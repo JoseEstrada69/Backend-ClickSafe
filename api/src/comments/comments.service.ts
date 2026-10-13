@@ -5,13 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Not, Repository } from 'typeorm';
 import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { isDuplicateKeyError } from '../common/utils/is-duplicate-key-error';
 import { Comentario, DenunciaComentario, Reporte } from '../database/entities';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CommentResponse } from './comment-response.interface';
+import { CommentResponse, MyCommentResponse } from './dto/comment-response.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { CreateFlagDto } from './dto/create-flag.dto';
 
@@ -94,6 +94,32 @@ export class CommentsService {
       relations: { usuario: true },
     });
     return this.toResponse(withAuthor as Comentario, userId);
+  }
+
+  /** GET /me/comments (sección 7): comentarios propios, paginados, sin los `eliminado`. */
+  async listMyComments(
+    userId: number,
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<MyCommentResponse>> {
+    const [rows, total] = await this.comentarioRepo.findAndCount({
+      where: { idUsuario: userId, estado: Not('eliminado') },
+      relations: { usuario: true, reporte: true },
+      order: { fechaCreacion: 'DESC' },
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+    });
+
+    return {
+      items: rows.map((c) => ({
+        ...this.toResponse(c, userId),
+        reporteId: c.idReporte,
+        reporteTitulo: c.reporte.titulo,
+        estado: c.estado,
+      })),
+      page: query.page,
+      limit: query.limit,
+      total,
+    };
   }
 
   /** Solo el autor, y solo borrado lógico (4.3): el UPDATE va condicionado a id + idUsuario. */

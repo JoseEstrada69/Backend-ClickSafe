@@ -1,21 +1,30 @@
+import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
-import { SessionService } from '../auth/session.service';
+import { AuthService } from '../auth/auth.service';
+import { MfaService } from '../auth/mfa.service';
+import { RequestMeta, SessionService } from '../auth/session.service';
 import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { escapeLikePattern } from '../common/utils/escape-like';
+import { hashPassword } from '../common/utils/password-hash';
+import { isDuplicateKeyError } from '../common/utils/is-duplicate-key-error';
 import {
   BitacoraAuditoria,
+  CategoriaFraude,
   Comentario,
   DenunciaComentario,
   Evidencia,
+  Plataforma,
   Reporte,
   RevisionReporte,
   Usuario,
@@ -25,20 +34,27 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { STORAGE_SERVICE } from '../storage/storage.service.interface';
 import type { StorageService } from '../storage/storage.service.interface';
 import {
+  AdminCategoryResponse,
+  AdminPlatformResponse,
   AdminReportResponse,
   AdminStatsResponse,
   AdminUserResponse,
   AuditLogEntryResponse,
   FlaggedCommentResponse,
-} from './admin-response.interface';
+} from './dto/admin-response.dto';
 import { AdminReportQueryDto } from './dto/admin-report-query.dto';
 import { AdminUserQueryDto } from './dto/admin-user-query.dto';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreatePlatformDto } from './dto/create-platform.dto';
 import {
   AccionModeracion,
   ModerateCommentDto,
 } from './dto/moderate-comment.dto';
 import { ReviewReportDto } from './dto/review-report.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
+import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 
 @Injectable()
@@ -47,6 +63,8 @@ export class AdminService {
     private readonly dataSource: DataSource,
     private readonly auditService: AuditService,
     private readonly sessionService: SessionService,
+    private readonly authService: AuthService,
+    private readonly mfaService: MfaService,
     private readonly notificationsService: NotificationsService,
     private readonly evidenceUrlService: EvidenceUrlService,
     @Inject(STORAGE_SERVICE)
@@ -65,6 +83,10 @@ export class AdminService {
     private readonly usuarioRepo: Repository<Usuario>,
     @InjectRepository(BitacoraAuditoria)
     private readonly bitacoraRepo: Repository<BitacoraAuditoria>,
+    @InjectRepository(Plataforma)
+    private readonly plataformaRepo: Repository<Plataforma>,
+    @InjectRepository(CategoriaFraude)
+    private readonly categoriaRepo: Repository<CategoriaFraude>,
   ) {}
 
   // ---- Reportes ----
@@ -371,6 +393,259 @@ export class AdminService {
       recursoTipo: 'Usuario',
       recursoId: idUsuario,
     });
+  }
+
+  /**
+   * POST /admin/admins (sección 7/8): requiere reautenticación con el TOTP
+   * del propio admin que llama (separación de funciones, no el código de
+   * nadie más). La cuenta nueva nace con una contraseña inutilizable que
+   * nadie conserva; el nuevo admin recibe un código de recuperación (5.7)
+   * para definir la suya, igual que el seed del primer admin (sección 8)
+   * pero disparado desde la API en vez de un script.
+   */
+  async createAdmin(
+    dto: CreateAdminDto,
+    callerId: number,
+    meta: RequestMeta = {},
+  ): Promise<AdminUserResponse> {
+    const caller = await this.usuarioRepo.findOne({
+      where: { idUsuario: callerId },
+    });
+    if (!caller) {
+      throw new UnauthorizedException();
+    }
+    await this.mfaService.reauthenticateAdmin(caller, dto.totp, meta);
+
+    const correo = dto.correo.trim().toLowerCase();
+    const existing = await this.usuarioRepo.findOne({ where: { correo } });
+    if (existing) {
+      throw new ConflictException('El correo ya está en uso.');
+    }
+
+    const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
+    let nuevo: Usuario;
+    try {
+      nuevo = await this.usuarioRepo.save(
+        this.usuarioRepo.create({
+          nombre: dto.nombre,
+          correo,
+          passwordHash,
+          rol: 'admin',
+          correoVerificado: true,
+          activo: true,
+        }),
+      );
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        throw new ConflictException('El correo ya está en uso.');
+      }
+      throw error;
+    }
+
+    await this.authService.sendPasswordRecoveryCode(nuevo);
+    await this.auditService.log({
+      idUsuario: callerId,
+      accion: 'admin_creado',
+      resultado: 'exito',
+      recursoTipo: 'Usuario',
+      recursoId: nuevo.idUsuario,
+      detalle: { via: 'admin' },
+    });
+
+    return {
+      id: nuevo.idUsuario,
+      nombre: nuevo.nombre,
+      correo: nuevo.correo,
+      rol: nuevo.rol,
+      activo: nuevo.activo,
+      correoVerificado: nuevo.correoVerificado,
+      fechaRegistro: nuevo.fechaRegistro.toISOString(),
+    };
+  }
+
+  // ---- Catálogos: plataformas ----
+
+  /** Incluye inactivas (a diferencia de GET /platforms): el admin necesita verlas para poder reactivarlas. */
+  async listPlatforms(): Promise<AdminPlatformResponse[]> {
+    const rows = await this.plataformaRepo.find({ order: { nombre: 'ASC' } });
+    return rows.map((p) => this.toPlatformResponse(p));
+  }
+
+  /** `esOtra` nunca se acepta aquí (CreatePlatformDto no lo declara): solo existe la "Otra" del .sql. */
+  async createPlatform(
+    dto: CreatePlatformDto,
+    adminId: number,
+  ): Promise<AdminPlatformResponse> {
+    let saved: Plataforma;
+    try {
+      saved = await this.plataformaRepo.save(
+        this.plataformaRepo.create({
+          nombre: dto.nombre,
+          esOtra: false,
+          activa: true,
+        }),
+      );
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        throw new ConflictException('Ya existe una plataforma con ese nombre.');
+      }
+      throw error;
+    }
+
+    await this.auditService.log({
+      idUsuario: adminId,
+      accion: 'catalogo_modificado',
+      resultado: 'exito',
+      recursoTipo: 'Plataforma',
+      recursoId: saved.idPlataforma,
+      detalle: { accion: 'crear' },
+    });
+
+    return this.toPlatformResponse(saved);
+  }
+
+  /** Nunca se puede desactivar la plataforma "Otra" (sección 1 regla 10, CLAUDE.md). */
+  async updatePlatform(
+    idPlataforma: number,
+    dto: UpdatePlatformDto,
+    adminId: number,
+  ): Promise<AdminPlatformResponse> {
+    const plataforma = await this.plataformaRepo.findOne({
+      where: { idPlataforma },
+    });
+    if (!plataforma) {
+      throw new NotFoundException();
+    }
+    if (plataforma.esOtra && dto.activa === false) {
+      throw new BadRequestException(
+        'No puedes desactivar la plataforma "Otra".',
+      );
+    }
+
+    const patch: Partial<Plataforma> = {};
+    if (dto.nombre !== undefined) patch.nombre = dto.nombre;
+    if (dto.activa !== undefined) patch.activa = dto.activa;
+
+    try {
+      await this.plataformaRepo.update({ idPlataforma }, patch);
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        throw new ConflictException('Ya existe una plataforma con ese nombre.');
+      }
+      throw error;
+    }
+
+    await this.auditService.log({
+      idUsuario: adminId,
+      accion: 'catalogo_modificado',
+      resultado: 'exito',
+      recursoTipo: 'Plataforma',
+      recursoId: idPlataforma,
+      detalle: { accion: 'editar' },
+    });
+
+    const updated = await this.plataformaRepo.findOne({
+      where: { idPlataforma },
+    });
+    return this.toPlatformResponse(updated as Plataforma);
+  }
+
+  // ---- Catálogos: categorías ----
+
+  async listCategories(): Promise<AdminCategoryResponse[]> {
+    const rows = await this.categoriaRepo.find({ order: { nombre: 'ASC' } });
+    return rows.map((c) => this.toCategoryResponse(c));
+  }
+
+  async createCategory(
+    dto: CreateCategoryDto,
+    adminId: number,
+  ): Promise<AdminCategoryResponse> {
+    let saved: CategoriaFraude;
+    try {
+      saved = await this.categoriaRepo.save(
+        this.categoriaRepo.create({
+          nombre: dto.nombre,
+          descripcion: dto.descripcion ?? null,
+          activa: true,
+        }),
+      );
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        throw new ConflictException('Ya existe una categoría con ese nombre.');
+      }
+      throw error;
+    }
+
+    await this.auditService.log({
+      idUsuario: adminId,
+      accion: 'catalogo_modificado',
+      resultado: 'exito',
+      recursoTipo: 'Categoria_fraude',
+      recursoId: saved.idCategoria,
+      detalle: { accion: 'crear' },
+    });
+
+    return this.toCategoryResponse(saved);
+  }
+
+  async updateCategory(
+    idCategoria: number,
+    dto: UpdateCategoryDto,
+    adminId: number,
+  ): Promise<AdminCategoryResponse> {
+    const categoria = await this.categoriaRepo.findOne({
+      where: { idCategoria },
+    });
+    if (!categoria) {
+      throw new NotFoundException();
+    }
+
+    const patch: Partial<CategoriaFraude> = {};
+    if (dto.nombre !== undefined) patch.nombre = dto.nombre;
+    if (dto.descripcion !== undefined) patch.descripcion = dto.descripcion;
+    if (dto.activa !== undefined) patch.activa = dto.activa;
+
+    try {
+      await this.categoriaRepo.update({ idCategoria }, patch);
+    } catch (error) {
+      if (isDuplicateKeyError(error)) {
+        throw new ConflictException('Ya existe una categoría con ese nombre.');
+      }
+      throw error;
+    }
+
+    await this.auditService.log({
+      idUsuario: adminId,
+      accion: 'catalogo_modificado',
+      resultado: 'exito',
+      recursoTipo: 'Categoria_fraude',
+      recursoId: idCategoria,
+      detalle: { accion: 'editar' },
+    });
+
+    const updated = await this.categoriaRepo.findOne({
+      where: { idCategoria },
+    });
+    return this.toCategoryResponse(updated as CategoriaFraude);
+  }
+
+  private toPlatformResponse(p: Plataforma): AdminPlatformResponse {
+    return {
+      id: p.idPlataforma,
+      nombre: p.nombre,
+      esOtra: p.esOtra,
+      activa: p.activa,
+    };
+  }
+
+  private toCategoryResponse(c: CategoriaFraude): AdminCategoryResponse {
+    return {
+      id: c.idCategoria,
+      nombre: c.nombre,
+      descripcion: c.descripcion,
+      activa: c.activa,
+    };
   }
 
   // ---- Estadísticas ----

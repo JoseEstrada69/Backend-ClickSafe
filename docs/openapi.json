@@ -7,7 +7,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Reto proof-of-work (5.2). Resuélvelo y manda el resultado en el campo `captcha`."
+            "description": "Reto proof-of-work (5.2). Resuélvelo y manda el resultado en el campo `captcha`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaptchaChallengeResponse"
+                }
+              }
+            }
           },
           "429": {
             "description": "Se excedió el límite de peticiones para esta ruta.",
@@ -46,7 +53,14 @@
         },
         "responses": {
           "202": {
-            "description": "Respuesta idéntica exista o no el correo (previene enumeración de usuarios, 5.3)."
+            "description": "Respuesta idéntica exista o no el correo (previene enumeración de usuarios, 5.3).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Captcha inválido/expirado (CAPTCHA_INVALID), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.",
@@ -100,7 +114,14 @@
         },
         "responses": {
           "200": {
-            "description": "Correo marcado como verificado."
+            "description": "Correo marcado como verificado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Código inválido o expirado (INVALID_CODE), o datos con formato inválido.",
@@ -155,7 +176,14 @@
         },
         "responses": {
           "202": {
-            "description": "Respuesta idéntica exista o no el correo."
+            "description": "Respuesta idéntica exista o no el correo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
@@ -210,7 +238,21 @@
         },
         "responses": {
           "200": {
-            "description": "Usuario normal: {accessToken, refreshToken, expiresIn}. Admin: {mfaRequired|mfaSetupRequired, mfaToken} (5.4)."
+            "description": "Usuario normal: {accessToken, refreshToken, expiresIn}. Admin: {mfaRequired|mfaSetupRequired, mfaToken} (5.4).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/TokensResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallengeResponse"
+                    }
+                  ]
+                }
+              }
+            }
           },
           "400": {
             "description": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
@@ -286,7 +328,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Secreto generado: { otpauthUri, qrCodeDataUrl } (5.5)."
+            "description": "Secreto generado: { otpauthUri, qrCodeDataUrl } (5.5).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Setup2faResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Falta el token, o es inválido/expiró (mfaToken de setup o access token de admin).",
@@ -348,7 +397,14 @@
         },
         "responses": {
           "200": {
-            "description": "2FA activado."
+            "description": "2FA activado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Todavía no se llamó a /2fa/setup, o el código no tiene el formato esperado.",
@@ -425,7 +481,14 @@
         },
         "responses": {
           "200": {
-            "description": "Código correcto: se emite la sesión completa, {accessToken, refreshToken, expiresIn}."
+            "description": "Código correcto: se emite la sesión completa, {accessToken, refreshToken, expiresIn}.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Datos con formato inválido.",
@@ -494,7 +557,14 @@
         },
         "responses": {
           "200": {
-            "description": "Nuevo par {accessToken, refreshToken, expiresIn} (rotación, 5.6)."
+            "description": "Nuevo par {accessToken, refreshToken, expiresIn} (rotación, 5.6).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokensResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Datos con formato inválido.",
@@ -661,7 +731,14 @@
         },
         "responses": {
           "202": {
-            "description": "Respuesta idéntica exista o no el correo (5.7)."
+            "description": "Respuesta idéntica exista o no el correo (5.7).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.",
@@ -716,7 +793,14 @@
         },
         "responses": {
           "200": {
-            "description": "Contraseña cambiada, sesiones revocadas (5.7)."
+            "description": "Contraseña cambiada, sesiones revocadas (5.7).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Captcha inválido/expirado (CAPTCHA_INVALID), código inválido/expirado (INVALID_CODE), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.",
@@ -760,7 +844,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Perfil del usuario autenticado: nombre, correo, rol, fechaRegistro, totpActivo."
+            "description": "Perfil del usuario autenticado: nombre, correo, rol, fechaRegistro, totpActivo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Token requerido, inválido, expirado, o sesión revocada.",
@@ -817,7 +908,14 @@
         },
         "responses": {
           "200": {
-            "description": "Perfil actualizado."
+            "description": "Perfil actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "El nombre no tiene un formato válido (1 a 100 caracteres).",
@@ -949,23 +1047,68 @@
         ]
       }
     },
-    "/api/v1/platforms": {
+    "/api/v1/me/reports": {
       "get": {
-        "operationId": "CatalogsController_listPlatforms",
-        "parameters": [],
+        "operationId": "MeController_getMyReports",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Plataformas activas, para elegir al crear un reporte."
+            "description": "Reportes propios, paginados (incluye los anónimos propios).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReportResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "description": "Token requerido, inválido, expirado, o sesión revocada.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "statusCode": 401,
                     "error": "Unauthorized",
-                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "message": "Token requerido, inválido, expirado, o sesión revocada.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
                   }
                 }
@@ -994,27 +1137,72 @@
           }
         ],
         "tags": [
-          "Catalogs"
+          "Me"
         ]
       }
     },
-    "/api/v1/categories": {
+    "/api/v1/me/comments": {
       "get": {
-        "operationId": "CatalogsController_listCategories",
-        "parameters": [],
+        "operationId": "MeController_getMyComments",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Categorías de fraude activas."
+            "description": "Comentarios propios, paginados (sin los borrados).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MyCommentResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
-            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "description": "Token requerido, inválido, expirado, o sesión revocada.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "statusCode": 401,
                     "error": "Unauthorized",
-                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "message": "Token requerido, inválido, expirado, o sesión revocada.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
                   }
                 }
@@ -1043,17 +1231,114 @@
           }
         ],
         "tags": [
-          "Catalogs"
+          "Me"
         ]
       }
     },
     "/api/v1/reports": {
       "get": {
         "operationId": "ReportsController_getFeed",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "plataforma",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "categoria",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "validado",
+                "rechazado"
+              ]
+            }
+          },
+          {
+            "name": "orden",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recientes",
+                "populares"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Feed paginado de reportes."
+            "description": "Feed paginado de reportes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReportResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -1139,7 +1424,14 @@
         },
         "responses": {
           "201": {
-            "description": "Reporte creado."
+            "description": "Reporte creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Catálogo inactivo (CATALOG_INACTIVE), falta plataformaOtra (PLATFORM_OTHER_REQUIRED), más de 5 imágenes (EVIDENCE_LIMIT), imagen inválida (INVALID_IMAGE), o datos con formato inválido.",
@@ -1207,7 +1499,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Detalle de un reporte."
+            "description": "Detalle de un reporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -1268,7 +1567,14 @@
         },
         "responses": {
           "200": {
-            "description": "Reporte actualizado."
+            "description": "Reporte actualizado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Reporte ya revisado (REPORT_NOT_EDITABLE), catálogo inactivo (CATALOG_INACTIVE), falta plataformaOtra (PLATFORM_OTHER_REQUIRED), o datos con formato inválido.",
@@ -1389,6 +1695,178 @@
         ]
       }
     },
+    "/api/v1/reports/{id}/evidences": {
+      "post": {
+        "operationId": "ReportsController_addEvidences",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "evidencias": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidencias agregadas al reporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Reporte ya revisado (REPORT_NOT_EDITABLE), más de 5 evidencias en total (EVIDENCE_LIMIT), o imagen inválida (INVALID_IMAGE).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Reporte ya revisado (REPORT_NOT_EDITABLE), más de 5 evidencias en total (EVIDENCE_LIMIT), o imagen inválida (INVALID_IMAGE).",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "REPORT_NOT_EDITABLE"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/v1/reports/{id}/evidences/{evidenceId}": {
+      "delete": {
+        "operationId": "ReportsController_deleteEvidence",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "evidenceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Evidencia borrada."
+          },
+          "400": {
+            "description": "El reporte ya fue revisado y no se puede modificar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "El reporte ya fue revisado y no se puede modificar.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "REPORT_NOT_EDITABLE"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
     "/api/v1/reports/{id}/like": {
       "post": {
         "operationId": "ReportsController_like",
@@ -1404,7 +1882,14 @@
         ],
         "responses": {
           "200": {
-            "description": "{ totalLikes, likedByMe }"
+            "description": "{ totalLikes, likedByMe }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -1471,7 +1956,14 @@
         ],
         "responses": {
           "200": {
-            "description": "{ totalLikes, likedByMe }"
+            "description": "{ totalLikes, likedByMe }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -1559,11 +2051,55 @@
             "schema": {
               "type": "number"
             }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Comentarios visibles de un reporte, paginados."
+            "description": "Comentarios visibles de un reporte, paginados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CommentResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -1624,7 +2160,14 @@
         },
         "responses": {
           "201": {
-            "description": "Comentario creado."
+            "description": "Comentario creado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommentResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "Datos con formato inválido.",
@@ -1827,10 +2370,63 @@
     "/api/v1/notifications": {
       "get": {
         "operationId": "NotificationsController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "leida",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Notificaciones propias, paginadas."
+            "description": "Notificaciones propias, paginadas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/NotificationResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -1874,7 +2470,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "{ count }"
+            "description": "{ count }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCountResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -2009,13 +2612,190 @@
         ]
       }
     },
-    "/api/v1/admin/reports": {
+    "/api/v1/platforms": {
       "get": {
-        "operationId": "AdminController_listReports",
+        "operationId": "CatalogsController_listPlatforms",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Cola de reportes (por defecto, pendientes), con autor real."
+            "description": "Plataformas activas, para elegir al crear un reporte.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PlatformResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "operationId": "CatalogsController_listCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Categorías de fraude activas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Catalogs"
+        ]
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "operationId": "AdminController_listReports",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "estado",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "pendiente",
+              "type": "string",
+              "enum": [
+                "pendiente",
+                "validado",
+                "rechazado"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cola de reportes (por defecto, pendientes), con autor real.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminReportResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -2260,7 +3040,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Comentarios ocultos automáticamente o con denuncias pendientes."
+            "description": "Comentarios ocultos automáticamente o con denuncias pendientes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FlaggedCommentResponse"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -2404,10 +3194,64 @@
     "/api/v1/admin/users": {
       "get": {
         "operationId": "AdminController_listUsers",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Usuarios paginados, con búsqueda por nombre/correo."
+            "description": "Usuarios paginados, con búsqueda por nombre/correo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AdminUserResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -2563,13 +3407,662 @@
         ]
       }
     },
+    "/api/v1/admin/admins": {
+      "post": {
+        "operationId": "AdminController_createAdmin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Admin creado. Recibe por correo un código de recuperación (5.7) para definir su contraseña.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "El código TOTP de reautenticación (del admin que llama) es incorrecto o la cuenta está bloqueada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "El código TOTP de reautenticación (del admin que llama) es incorrecto o la cuenta está bloqueada.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/platforms": {
+      "get": {
+        "operationId": "AdminController_listPlatforms",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Todas las plataformas, activas e inactivas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminPlatformResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createPlatform",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePlatformDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Plataforma creada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPlatformResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/platforms/{id}": {
+      "patch": {
+        "operationId": "AdminController_updatePlatform",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlatformDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Plataforma actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPlatformResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No puedes desactivar la plataforma \"Otra\", o datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "No puedes desactivar la plataforma \"Otra\", o datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/categories": {
+      "get": {
+        "operationId": "AdminController_listCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Todas las categorías, activas e inactivas.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminCategoryResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createCategory",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Categoría creada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/categories/{id}": {
+      "patch": {
+        "operationId": "AdminController_updateCategory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Categoría actualizada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminCategoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos con formato inválido.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "error": "Bad Request",
+                    "message": "Datos con formato inválido.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciales inválidas, o token/código inválido o expirado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "error": "Unauthorized",
+                    "message": "Credenciales inválidas, o token/código inválido o expirado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Requiere rol admin con 2FA completado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "error": "Forbidden",
+                    "message": "Requiere rol admin con 2FA completado.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Se excedió el límite de peticiones para esta ruta.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 429,
+                    "error": "Too Many Requests",
+                    "message": "ThrottlerException: Too Many Requests",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
     "/api/v1/admin/stats": {
       "get": {
         "operationId": "AdminController_getStats",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Estadísticas por plataforma (Otra agrupada), categoría y estado."
+            "description": "Estadísticas por plataforma (Otra agrupada), categoría y estado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatsResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -2630,10 +4123,91 @@
     "/api/v1/admin/audit-log": {
       "get": {
         "operationId": "AdminController_getAuditLog",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          },
+          {
+            "name": "accion",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maxLength": 60,
+              "type": "string"
+            }
+          },
+          {
+            "name": "usuario",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "desde",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasta",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Bitácora de auditoría, paginada y filtrable."
+            "description": "Bitácora de auditoría, paginada y filtrable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AuditLogEntryResponse"
+                      }
+                    },
+                    "page": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -2697,7 +4271,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -2728,73 +4309,1328 @@
       }
     },
     "schemas": {
+      "CaptchaChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "algorithm": {
+            "type": "string"
+          },
+          "challenge": {
+            "type": "string"
+          },
+          "maxnumber": {
+            "type": "number"
+          },
+          "salt": {
+            "type": "string"
+          },
+          "signature": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "algorithm",
+          "challenge",
+          "maxnumber",
+          "salt",
+          "signature"
+        ]
+      },
       "RegisterDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "captcha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nombre",
+          "correo",
+          "password",
+          "captcha"
+        ]
+      },
+      "GenericMessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
       },
       "VerifyEmailDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "correo",
+          "codigo"
+        ]
       },
       "ResendVerificationDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "captcha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "correo",
+          "captcha"
+        ]
+      },
+      "TokensResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "expiresIn"
+        ]
+      },
+      "MfaChallengeResponse": {
+        "type": "object",
+        "properties": {
+          "mfaRequired": {
+            "type": "boolean"
+          },
+          "mfaSetupRequired": {
+            "type": "boolean"
+          },
+          "mfaToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mfaToken"
+        ]
       },
       "LoginDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "captcha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "correo",
+          "password",
+          "captcha"
+        ]
+      },
+      "Setup2faResponse": {
+        "type": "object",
+        "properties": {
+          "otpauthUri": {
+            "type": "string"
+          },
+          "qrCodeDataUrl": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "otpauthUri",
+          "qrCodeDataUrl"
+        ]
       },
       "MfaEnableDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "codigo"
+        ]
       },
       "MfaVerifyDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "mfaToken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "mfaToken",
+          "codigo"
+        ]
       },
       "RefreshDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
       },
       "ForgotPasswordDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "captcha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "correo",
+          "captcha"
+        ]
       },
       "ResetPasswordDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "codigo": {
+            "type": "string",
+            "pattern": "^\\d{8}$"
+          },
+          "nuevaPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          },
+          "captcha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "correo",
+          "codigo",
+          "nuevaPassword",
+          "captcha"
+        ]
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "rol": {
+            "enum": [
+              "usuario",
+              "admin"
+            ],
+            "type": "string"
+          },
+          "fechaRegistro": {
+            "type": "string"
+          },
+          "totpActivo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "nombre",
+          "correo",
+          "rol",
+          "fechaRegistro",
+          "totpActivo"
+        ]
       },
       "UpdateMeDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "nombre"
+        ]
       },
       "ChangePasswordDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "passwordActual": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "nuevaPassword": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "passwordActual",
+          "nuevaPassword"
+        ]
+      },
+      "ReportPlatformRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ]
+      },
+      "ReportCategoryRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ]
+      },
+      "ReportAuthorRefResponse": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "EvidenceRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
+      "ReportRevisionResponse": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "validado",
+              "rechazado"
+            ]
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "comentario",
+          "fecha"
+        ]
+      },
+      "ReportResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "urlPublicacion": {
+            "type": "string"
+          },
+          "plataforma": {
+            "$ref": "#/components/schemas/ReportPlatformRefResponse"
+          },
+          "plataformaOtra": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/ReportCategoryRefResponse"
+          },
+          "estado": {
+            "enum": [
+              "pendiente",
+              "validado",
+              "rechazado"
+            ],
+            "type": "string"
+          },
+          "anonimo": {
+            "type": "boolean"
+          },
+          "autor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportAuthorRefResponse"
+              }
+            ]
+          },
+          "esMio": {
+            "type": "boolean"
+          },
+          "likedByMe": {
+            "type": "boolean"
+          },
+          "totalLikes": {
+            "type": "number"
+          },
+          "totalComentarios": {
+            "type": "number"
+          },
+          "evidencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRefResponse"
+            }
+          },
+          "revision": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRevisionResponse"
+              }
+            ]
+          },
+          "fechaCreacion": {
+            "type": "string"
+          },
+          "fechaActualizacion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "descripcion",
+          "urlPublicacion",
+          "plataforma",
+          "plataformaOtra",
+          "categoria",
+          "estado",
+          "anonimo",
+          "autor",
+          "esMio",
+          "likedByMe",
+          "totalLikes",
+          "totalComentarios",
+          "evidencias",
+          "revision",
+          "fechaCreacion",
+          "fechaActualizacion"
+        ]
+      },
+      "CommentAuthorRefResponse": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "MyCommentResponse": {
+        "type": "object",
+        "properties": {
+          "reporteId": {
+            "type": "number"
+          },
+          "reporteTitulo": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "visible",
+              "oculto_auto",
+              "oculto_admin",
+              "eliminado"
+            ]
+          },
+          "id": {
+            "type": "number"
+          },
+          "contenido": {
+            "type": "string"
+          },
+          "anonimo": {
+            "type": "boolean"
+          },
+          "autor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommentAuthorRefResponse"
+              }
+            ]
+          },
+          "esMio": {
+            "type": "boolean"
+          },
+          "fechaCreacion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reporteId",
+          "reporteTitulo",
+          "estado",
+          "id",
+          "contenido",
+          "anonimo",
+          "autor",
+          "esMio",
+          "fechaCreacion"
+        ]
       },
       "UpdateReportDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "titulo": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 150
+          },
+          "descripcion": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 5000
+          },
+          "urlPublicacion": {
+            "type": "string",
+            "maxLength": 2048,
+            "format": "uri"
+          },
+          "plataformaId": {
+            "type": "number",
+            "minimum": 1
+          },
+          "plataformaOtra": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "categoriaId": {
+            "type": "number",
+            "minimum": 1
+          },
+          "anonimo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LikeResponse": {
+        "type": "object",
+        "properties": {
+          "totalLikes": {
+            "type": "number"
+          },
+          "likedByMe": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "totalLikes",
+          "likedByMe"
+        ]
+      },
+      "CommentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "contenido": {
+            "type": "string"
+          },
+          "anonimo": {
+            "type": "boolean"
+          },
+          "autor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommentAuthorRefResponse"
+              }
+            ]
+          },
+          "esMio": {
+            "type": "boolean"
+          },
+          "fechaCreacion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "contenido",
+          "anonimo",
+          "autor",
+          "esMio",
+          "fechaCreacion"
+        ]
       },
       "CreateCommentDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "contenido": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "anonimo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "contenido",
+          "anonimo"
+        ]
       },
       "CreateFlagDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "acoso",
+              "lenguaje_ofensivo",
+              "informacion_personal",
+              "otro"
+            ]
+          },
+          "detalle": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "motivo"
+        ]
+      },
+      "NotificationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "tipo": {
+            "type": "string",
+            "enum": [
+              "reporte_validado",
+              "reporte_rechazado",
+              "nuevo_comentario",
+              "comentario_ocultado"
+            ]
+          },
+          "mensaje": {
+            "type": "string"
+          },
+          "leida": {
+            "type": "boolean"
+          },
+          "reporteId": {
+            "type": "number"
+          },
+          "fechaCreacion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "tipo",
+          "mensaje",
+          "leida",
+          "reporteId",
+          "fechaCreacion"
+        ]
+      },
+      "UnreadCountResponse": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "count"
+        ]
+      },
+      "PlatformResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "esOtra": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "esOtra"
+        ]
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "descripcion"
+        ]
+      },
+      "AdminReportPlatformRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ]
+      },
+      "AdminReportCategoryRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre"
+        ]
+      },
+      "AdminUserRefResponse": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nombre",
+          "correo"
+        ]
+      },
+      "AdminEvidenceRefResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
+      "AdminReportResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "urlPublicacion": {
+            "type": "string"
+          },
+          "plataforma": {
+            "$ref": "#/components/schemas/AdminReportPlatformRefResponse"
+          },
+          "plataformaOtra": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/AdminReportCategoryRefResponse"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "validado",
+              "rechazado"
+            ]
+          },
+          "anonimo": {
+            "type": "boolean"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/AdminUserRefResponse"
+          },
+          "totalLikes": {
+            "type": "number"
+          },
+          "evidencias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminEvidenceRefResponse"
+            }
+          },
+          "fechaCreacion": {
+            "type": "string"
+          },
+          "fechaActualizacion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "titulo",
+          "descripcion",
+          "urlPublicacion",
+          "plataforma",
+          "plataformaOtra",
+          "categoria",
+          "estado",
+          "anonimo",
+          "autor",
+          "totalLikes",
+          "evidencias",
+          "fechaCreacion",
+          "fechaActualizacion"
+        ]
       },
       "ReviewReportDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "validado",
+              "rechazado"
+            ]
+          },
+          "comentario": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "FlaggedCommentResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "contenido": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string",
+            "enum": [
+              "visible",
+              "oculto_auto",
+              "oculto_admin",
+              "eliminado"
+            ]
+          },
+          "totalDenuncias": {
+            "type": "number"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/AdminUserRefResponse"
+          },
+          "reporteId": {
+            "type": "number"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "spam",
+                "acoso",
+                "lenguaje_ofensivo",
+                "informacion_personal",
+                "otro"
+              ]
+            }
+          },
+          "fechaCreacion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "contenido",
+          "estado",
+          "totalDenuncias",
+          "autor",
+          "reporteId",
+          "motivos",
+          "fechaCreacion"
+        ]
       },
       "ModerateCommentDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "accion": {
+            "type": "string",
+            "enum": [
+              "confirmar",
+              "restaurar"
+            ]
+          }
+        },
+        "required": [
+          "accion"
+        ]
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "rol": {
+            "enum": [
+              "usuario",
+              "admin"
+            ],
+            "type": "string"
+          },
+          "activo": {
+            "type": "boolean"
+          },
+          "correoVerificado": {
+            "type": "boolean"
+          },
+          "fechaRegistro": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "correo",
+          "rol",
+          "activo",
+          "correoVerificado",
+          "fechaRegistro"
+        ]
       },
       "UpdateUserStatusDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "activo": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "activo"
+        ]
+      },
+      "CreateAdminDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "correo": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email"
+          },
+          "totp": {
+            "type": "string",
+            "pattern": "^\\d{6}$"
+          }
+        },
+        "required": [
+          "nombre",
+          "correo",
+          "totp"
+        ]
+      },
+      "AdminPlatformResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "esOtra": {
+            "type": "boolean"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "esOtra",
+          "activa"
+        ]
+      },
+      "CreatePlatformDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "UpdatePlatformDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdminCategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "nombre",
+          "descripcion",
+          "activa"
+        ]
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "nombre"
+        ]
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "descripcion": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdminStatsPlatformEntry": {
+        "type": "object",
+        "properties": {
+          "plataforma": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "plataforma",
+          "total"
+        ]
+      },
+      "AdminStatsCategoryEntry": {
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "categoria",
+          "total"
+        ]
+      },
+      "AdminStatsStateEntry": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "pendiente",
+              "validado",
+              "rechazado"
+            ]
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "estado",
+          "total"
+        ]
+      },
+      "AdminStatsResponse": {
+        "type": "object",
+        "properties": {
+          "porPlataforma": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminStatsPlatformEntry"
+            }
+          },
+          "porCategoria": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminStatsCategoryEntry"
+            }
+          },
+          "porEstado": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminStatsStateEntry"
+            }
+          }
+        },
+        "required": [
+          "porPlataforma",
+          "porCategoria",
+          "porEstado"
+        ]
+      },
+      "AuditLogEntryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fecha": {
+            "type": "string"
+          },
+          "idUsuario": {
+            "type": "number",
+            "nullable": true
+          },
+          "accion": {
+            "type": "string"
+          },
+          "resultado": {
+            "type": "string",
+            "enum": [
+              "exito",
+              "fallo"
+            ]
+          },
+          "recursoTipo": {
+            "type": "string",
+            "nullable": true
+          },
+          "recursoId": {
+            "type": "number",
+            "nullable": true
+          },
+          "ip": {
+            "type": "string",
+            "nullable": true
+          },
+          "userAgent": {
+            "type": "string",
+            "nullable": true
+          },
+          "detalle": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "fecha",
+          "idUsuario",
+          "accion",
+          "resultado",
+          "recursoTipo",
+          "recursoId",
+          "ip",
+          "userAgent",
+          "detalle"
+        ]
       }
     }
   }
