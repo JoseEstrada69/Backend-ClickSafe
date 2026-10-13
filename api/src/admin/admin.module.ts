@@ -4,9 +4,11 @@ import { AuditModule } from '../audit/audit.module';
 import { AuthModule } from '../auth/auth.module';
 import {
   BitacoraAuditoria,
+  CategoriaFraude,
   Comentario,
   DenunciaComentario,
   Evidencia,
+  Plataforma,
   Reporte,
   RevisionReporte,
   Usuario,
@@ -27,6 +29,8 @@ import { AdminService } from './admin.service';
       DenunciaComentario,
       Usuario,
       BitacoraAuditoria,
+      Plataforma,
+      CategoriaFraude,
     ]),
     AuditModule,
     AuthModule, // SessionService.revokeAllForUser (suspensión de usuario)

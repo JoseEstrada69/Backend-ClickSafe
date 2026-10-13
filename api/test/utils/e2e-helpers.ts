@@ -17,7 +17,7 @@ authenticator.options = { step: TOTP_STEP_SECONDS, digits: 6, window: 1 };
  * MISMO código (mismo contador), que el servidor rechazaría como reuso
  * (5.5, totp_ultimo_contador).
  */
-function generateTotpCode(secret: string, windowOffset = 0): string {
+export function generateTotpCode(secret: string, windowOffset = 0): string {
   const previous = authenticator.options;
   authenticator.options = {
     ...previous,
@@ -99,6 +99,10 @@ export interface TestUser {
   accessToken: string;
 }
 
+export interface TestAdmin extends TestUser {
+  totpSecret: string;
+}
+
 /**
  * Registra, verifica (vía repo, sin depender de Mailpit) y loguea un
  * usuario normal real a través de los endpoints HTTP — atajo de prueba
@@ -166,7 +170,7 @@ export async function createVerifiedAdmin(
   app: NestExpressApplication,
   usuarioRepo: Repository<Usuario>,
   options: { nombre?: string; password?: string } = {},
-): Promise<TestUser> {
+): Promise<TestAdmin> {
   const correo = `e2e-admin-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
   const password = options.password ?? 'Xk9#mPq2vL7zT4Qw';
   const nombre = options.nombre ?? 'Admin E2E';
@@ -232,5 +236,6 @@ export async function createVerifiedAdmin(
     idUsuario: usuario.idUsuario,
     correo,
     accessToken: body.accessToken,
+    totpSecret: secret,
   };
 }

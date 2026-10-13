@@ -1,0 +1,112 @@
+import type {
+  EstadoComentario,
+  EstadoReporte,
+  MotivoDenuncia,
+} from '../../database/entities';
+
+export class AdminUserRefResponse {
+  nombre!: string;
+  correo!: string;
+}
+
+export class AdminReportPlatformRefResponse {
+  id!: number;
+  nombre!: string;
+}
+
+export class AdminReportCategoryRefResponse {
+  id!: number;
+  nombre!: string;
+}
+
+export class AdminEvidenceRefResponse {
+  id!: number;
+  url!: string;
+}
+
+/** Igual a ReportResponse pero con el autor real siempre visible, aunque el reporte sea anónimo (sección 7): solo para la cola de admin. */
+export class AdminReportResponse {
+  id!: number;
+  titulo!: string;
+  descripcion!: string;
+  urlPublicacion!: string;
+  plataforma!: AdminReportPlatformRefResponse;
+  plataformaOtra!: string | null;
+  categoria!: AdminReportCategoryRefResponse;
+  estado!: EstadoReporte;
+  anonimo!: boolean;
+  autor!: AdminUserRefResponse;
+  totalLikes!: number;
+  evidencias!: AdminEvidenceRefResponse[];
+  fechaCreacion!: string;
+  fechaActualizacion!: string;
+}
+
+export class FlaggedCommentResponse {
+  id!: number;
+  contenido!: string;
+  estado!: EstadoComentario;
+  totalDenuncias!: number;
+  autor!: AdminUserRefResponse;
+  reporteId!: number;
+  motivos!: MotivoDenuncia[];
+  fechaCreacion!: string;
+}
+
+export class AdminUserResponse {
+  id!: number;
+  nombre!: string;
+  correo!: string;
+  rol!: 'usuario' | 'admin';
+  activo!: boolean;
+  correoVerificado!: boolean;
+  fechaRegistro!: string;
+}
+
+export class AdminStatsPlatformEntry {
+  plataforma!: string;
+  total!: number;
+}
+
+export class AdminStatsCategoryEntry {
+  categoria!: string;
+  total!: number;
+}
+
+export class AdminStatsStateEntry {
+  estado!: EstadoReporte;
+  total!: number;
+}
+
+export class AdminStatsResponse {
+  porPlataforma!: AdminStatsPlatformEntry[];
+  porCategoria!: AdminStatsCategoryEntry[];
+  porEstado!: AdminStatsStateEntry[];
+}
+
+export class AdminPlatformResponse {
+  id!: number;
+  nombre!: string;
+  esOtra!: boolean;
+  activa!: boolean;
+}
+
+export class AdminCategoryResponse {
+  id!: number;
+  nombre!: string;
+  descripcion!: string | null;
+  activa!: boolean;
+}
+
+export class AuditLogEntryResponse {
+  id!: string;
+  fecha!: string;
+  idUsuario!: number | null;
+  accion!: string;
+  resultado!: 'exito' | 'fallo';
+  recursoTipo!: string | null;
+  recursoId!: number | null;
+  ip!: string | null;
+  userAgent!: string | null;
+  detalle!: Record<string, unknown> | null;
+}
