@@ -6,14 +6,7 @@ import { LessThan, Repository } from 'typeorm';
 import { AppConfigService } from '../config/app-config.service';
 import { CaptchaUsado } from '../database/entities';
 import { timingSafeEqualHex } from '../common/utils/timing-safe-equal-hex';
-
-export interface CaptchaChallenge {
-  algorithm: 'SHA-256';
-  challenge: string;
-  maxnumber: number;
-  salt: string;
-  signature: string;
-}
+import { CaptchaChallengeResponse } from './dto/captcha-challenge-response.dto';
 
 interface SolvedCaptchaPayload {
   algorithm: string;
@@ -47,7 +40,7 @@ export class CaptchaService {
     private readonly captchaUsadoRepo: Repository<CaptchaUsado>,
   ) {}
 
-  createChallenge(): CaptchaChallenge {
+  createChallenge(): CaptchaChallengeResponse {
     const expires = Math.floor(Date.now() / 1000) + CHALLENGE_TTL_SECONDS;
     const salt = `${randomBytes(12).toString('hex')}?expires=${expires}`;
     const number = randomInt(0, MAX_NUMBER);

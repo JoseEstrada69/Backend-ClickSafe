@@ -11,8 +11,10 @@ import {
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
+  ApiExtraModels,
   ApiNoContentResponse,
   ApiOkResponse,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClientInfo } from '../common/decorators/client-info.decorator';
@@ -30,7 +32,7 @@ import {
   ApiUnauthorizedResponse,
 } from '../common/swagger/error-responses.decorator';
 import { CaptchaService } from '../captcha/captcha.service';
-import type { CaptchaChallenge } from '../captcha/captcha.service';
+import { CaptchaChallengeResponse } from '../captcha/dto/captcha-challenge-response.dto';
 import { Usuario } from '../database/entities';
 import { AuthService } from './auth.service';
 import {
@@ -38,7 +40,7 @@ import {
   MfaChallengeResponse,
   Setup2faResponse,
   TokensResponse,
-} from './auth-responses.interface';
+} from './dto/auth-responses.dto';
 import { MfaAdmin } from './decorators/mfa-admin.decorator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -79,8 +81,9 @@ export class AuthController {
   @ApiOkResponse({
     description:
       'Reto proof-of-work (5.2). Resuélvelo y manda el resultado en el campo `captcha`.',
+    type: CaptchaChallengeResponse,
   })
-  getCaptcha(): CaptchaChallenge {
+  getCaptcha(): CaptchaChallengeResponse {
     return this.captchaService.createChallenge();
   }
 
@@ -90,6 +93,7 @@ export class AuthController {
   @ApiAcceptedResponse({
     description:
       'Respuesta idéntica exista o no el correo (previene enumeración de usuarios, 5.3).',
+    type: GenericMessageResponse,
   })
   @ApiBadRequestResponse(
     'Captcha inválido/expirado (CAPTCHA_INVALID), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.',
@@ -104,7 +108,10 @@ export class AuthController {
   @Public()
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ description: 'Correo marcado como verificado.' })
+  @ApiOkResponse({
+    description: 'Correo marcado como verificado.',
+    type: GenericMessageResponse,
+  })
   @ApiBadRequestResponse(
     'Código inválido o expirado (INVALID_CODE), o datos con formato inválido.',
     'INVALID_CODE',
@@ -122,6 +129,7 @@ export class AuthController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiAcceptedResponse({
     description: 'Respuesta idéntica exista o no el correo.',
+    type: GenericMessageResponse,
   })
   @ApiBadRequestResponse(
     'Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.',
@@ -136,9 +144,16 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiExtraModels(TokensResponse, MfaChallengeResponse)
   @ApiOkResponse({
     description:
       'Usuario normal: {accessToken, refreshToken, expiresIn}. Admin: {mfaRequired|mfaSetupRequired, mfaToken} (5.4).',
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(TokensResponse) },
+        { $ref: getSchemaPath(MfaChallengeResponse) },
+      ],
+    },
   })
   @ApiBadRequestResponse(
     'Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.',
@@ -163,6 +178,7 @@ export class AuthController {
   @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
   @ApiOkResponse({
     description: 'Secreto generado: { otpauthUri, qrCodeDataUrl } (5.5).',
+    type: Setup2faResponse,
   })
   @ApiUnauthorizedResponse(
     'Falta el token, o es inválido/expiró (mfaToken de setup o access token de admin).',
@@ -177,7 +193,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth(MFA_TOKEN_SCHEME_NAME)
   @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
-  @ApiOkResponse({ description: '2FA activado.' })
+  @ApiOkResponse({ description: '2FA activado.', type: GenericMessageResponse })
   @ApiBadRequestResponse(
     'Todavía no se llamó a /2fa/setup, o el código no tiene el formato esperado.',
   )
@@ -199,6 +215,7 @@ export class AuthController {
   @ApiOkResponse({
     description:
       'Código correcto: se emite la sesión completa, {accessToken, refreshToken, expiresIn}.',
+    type: TokensResponse,
   })
   @ApiBadRequestResponse('Datos con formato inválido.')
   @ApiUnauthorizedResponse(
@@ -217,6 +234,7 @@ export class AuthController {
   @ApiOkResponse({
     description:
       'Nuevo par {accessToken, refreshToken, expiresIn} (rotación, 5.6).',
+    type: TokensResponse,
   })
   @ApiBadRequestResponse('Datos con formato inválido.')
   @ApiUnauthorizedResponse(
@@ -264,6 +282,7 @@ export class AuthController {
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiAcceptedResponse({
     description: 'Respuesta idéntica exista o no el correo (5.7).',
+    type: GenericMessageResponse,
   })
   @ApiBadRequestResponse(
     'Captcha inválido o expirado (CAPTCHA_INVALID), o datos con formato inválido.',
@@ -281,6 +300,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Contraseña cambiada, sesiones revocadas (5.7).',
+    type: GenericMessageResponse,
   })
   @ApiBadRequestResponse(
     'Captcha inválido/expirado (CAPTCHA_INVALID), código inválido/expirado (INVALID_CODE), contraseña débil (PASSWORD_WEAK), o datos con formato inválido.',

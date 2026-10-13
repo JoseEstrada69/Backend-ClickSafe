@@ -6,7 +6,11 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from '../src/app.module';
 import { buildOpenApiDocument } from '../src/setup-app';
 
-const OUTPUT_PATH = resolve(__dirname, '../../docs/openapi.json');
+// Resuelto desde el directorio de trabajo (siempre `api/`, por el script de
+// npm), no desde __dirname: este archivo corre compilado desde dist/scripts
+// (nest build aplica el plugin de @nestjs/swagger que ts-node no aplica, 9),
+// y __dirname ahí tiene un nivel más de anidación que scripts/.
+const OUTPUT_PATH = resolve(process.cwd(), '../docs/openapi.json');
 
 /**
  * npm run openapi:export (sección 9). Genera docs/openapi.json con el

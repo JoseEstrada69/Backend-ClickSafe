@@ -2,7 +2,8 @@ import { createHash, createHmac } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { AppConfigService } from '../config/app-config.service';
 import { CaptchaUsado } from '../database/entities';
-import { CaptchaService, CaptchaChallenge } from './captcha.service';
+import { CaptchaChallengeResponse } from './dto/captcha-challenge-response.dto';
+import { CaptchaService } from './captcha.service';
 
 const HMAC_KEY = 'clave-de-prueba-para-captcha-123456789012';
 
@@ -15,7 +16,7 @@ function hmac(value: string): string {
 }
 
 /** Reconstruye un reto como lo haría el servicio, con una expiración elegida por la prueba. */
-function buildChallenge(expiresInSeconds: number): CaptchaChallenge {
+function buildChallenge(expiresInSeconds: number): CaptchaChallengeResponse {
   const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
   const salt = `0123456789ab?expires=${expires}`;
   const number = 42;
@@ -30,7 +31,7 @@ function buildChallenge(expiresInSeconds: number): CaptchaChallenge {
   };
 }
 
-function bruteForce(challenge: CaptchaChallenge): number {
+function bruteForce(challenge: CaptchaChallengeResponse): number {
   for (let i = 0; i <= challenge.maxnumber; i++) {
     if (sha256(challenge.salt + i.toString()) === challenge.challenge) {
       return i;
@@ -40,7 +41,7 @@ function bruteForce(challenge: CaptchaChallenge): number {
 }
 
 function encodePayload(
-  challenge: CaptchaChallenge,
+  challenge: CaptchaChallengeResponse,
   number: number,
   overrides: Partial<Record<string, unknown>> = {},
 ): string {

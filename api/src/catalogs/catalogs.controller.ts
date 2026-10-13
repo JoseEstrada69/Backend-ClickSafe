@@ -5,10 +5,7 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '../common/swagger/error-responses.decorator';
-import {
-  CategoryResponse,
-  PlatformResponse,
-} from './catalog-response.interface';
+import { CategoryResponse, PlatformResponse } from './dto/catalog-response.dto';
 import { CatalogsService } from './catalogs.service';
 
 @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
@@ -21,13 +18,17 @@ export class CatalogsController {
   @Get('platforms')
   @ApiOkResponse({
     description: 'Plataformas activas, para elegir al crear un reporte.',
+    type: [PlatformResponse],
   })
   listPlatforms(): Promise<PlatformResponse[]> {
     return this.catalogsService.listPlatforms();
   }
 
   @Get('categories')
-  @ApiOkResponse({ description: 'Categorías de fraude activas.' })
+  @ApiOkResponse({
+    description: 'Categorías de fraude activas.',
+    type: [CategoryResponse],
+  })
   listCategories(): Promise<CategoryResponse[]> {
     return this.catalogsService.listCategories();
   }

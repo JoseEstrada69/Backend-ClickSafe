@@ -4,7 +4,8 @@ import { Repository } from 'typeorm';
 import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { Notificacion, TipoNotificacion } from '../database/entities';
 import { NotificationQueryDto } from './dto/notification-query.dto';
-import { NotificationResponse } from './notification-response.interface';
+import { NotificationResponse } from './dto/notification-response.dto';
+import { UnreadCountResponse } from './dto/unread-count-response.dto';
 
 /**
  * Notificaciones dentro de la app (sección 1, regla 9). Los mensajes se
@@ -51,7 +52,7 @@ export class NotificationsService {
     };
   }
 
-  async unreadCount(userId: number): Promise<{ count: number }> {
+  async unreadCount(userId: number): Promise<UnreadCountResponse> {
     const count = await this.notificacionRepo.count({
       where: { idUsuario: userId, leida: false },
     });

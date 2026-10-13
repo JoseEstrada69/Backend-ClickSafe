@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CategoriaFraude, Plataforma } from '../database/entities';
-import {
-  CategoryResponse,
-  PlatformResponse,
-} from './catalog-response.interface';
+import { CategoryResponse, PlatformResponse } from './dto/catalog-response.dto';
 
 /** Catálogos de solo lectura (sección 7): solo se devuelven los activos. Administrarlos queda pospuesto (ver CLAUDE.md). */
 @Injectable()

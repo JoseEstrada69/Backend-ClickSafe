@@ -11,11 +11,14 @@ import {
 import { ApiNoContentResponse, ApiOkResponse } from '@nestjs/swagger';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
 import { ParsePositiveIntPipe } from '../common/pipes/parse-positive-int.pipe';
+import { ApiPaginatedResponse } from '../common/swagger/paginated-response.decorator';
 import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '../common/swagger/error-responses.decorator';
 import { NotificationQueryDto } from './dto/notification-query.dto';
+import { NotificationResponse } from './dto/notification-response.dto';
+import { UnreadCountResponse } from './dto/unread-count-response.dto';
 import { NotificationsService } from './notifications.service';
 
 @ApiUnauthorizedResponse()
@@ -25,13 +28,16 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  @ApiOkResponse({ description: 'Notificaciones propias, paginadas.' })
+  @ApiPaginatedResponse(
+    NotificationResponse,
+    'Notificaciones propias, paginadas.',
+  )
   list(@Query() query: NotificationQueryDto, @Req() req: AuthenticatedRequest) {
     return this.notificationsService.list(Number(req.user?.sub), query);
   }
 
   @Get('unread-count')
-  @ApiOkResponse({ description: '{ count }' })
+  @ApiOkResponse({ description: '{ count }', type: UnreadCountResponse })
   unreadCount(@Req() req: AuthenticatedRequest) {
     return this.notificationsService.unreadCount(Number(req.user?.sub));
   }
