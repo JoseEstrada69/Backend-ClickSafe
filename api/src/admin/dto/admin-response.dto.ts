@@ -78,10 +78,18 @@ export class AdminStatsStateEntry {
   total!: number;
 }
 
+/** `mes` en formato "YYYY-MM", UTC (sección 1 regla 11). */
+export class AdminStatsMonthEntry {
+  mes!: string;
+  total!: number;
+}
+
 export class AdminStatsResponse {
   porPlataforma!: AdminStatsPlatformEntry[];
   porCategoria!: AdminStatsCategoryEntry[];
   porEstado!: AdminStatsStateEntry[];
+  /** Últimos 12 meses en UTC, de más antiguo a más reciente; incluye meses sin reportes con total 0. */
+  porMes!: AdminStatsMonthEntry[];
 }
 
 export class AdminPlatformResponse {

@@ -37,6 +37,7 @@ import {
   AdminCategoryResponse,
   AdminPlatformResponse,
   AdminReportResponse,
+  AdminStatsMonthEntry,
   AdminStatsResponse,
   AdminUserResponse,
   AuditLogEntryResponse,
@@ -56,6 +57,8 @@ import { ReviewReportDto } from './dto/review-report.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { UpdatePlatformDto } from './dto/update-platform.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+
+const MONTHLY_STATS_MONTHS = 12; // sección 1 regla 11: dashboard admin, estadísticas por mes.
 
 @Injectable()
 export class AdminService {
@@ -651,7 +654,7 @@ export class AdminService {
   // ---- Estadísticas ----
 
   async getStats(): Promise<AdminStatsResponse> {
-    const [porPlataforma, porCategoria, porEstado] = await Promise.all([
+    const [porPlataforma, porCategoria, porEstado, porMes] = await Promise.all([
       this.reporteRepo
         .createQueryBuilder('r')
         .innerJoin('r.plataforma', 'p')
@@ -680,6 +683,7 @@ export class AdminService {
           estado: AdminStatsResponse['porEstado'][number]['estado'];
           total: string;
         }>(),
+      this.getMonthlyStats(),
     ]);
 
     return {
@@ -695,7 +699,44 @@ export class AdminService {
         estado: row.estado,
         total: Number(row.total),
       })),
+      porMes,
     };
+  }
+
+  /**
+   * Últimos 12 meses en UTC (sección 1 regla 11), incluidos los que no
+   * tienen reportes (total: 0) para que el dashboard pueda graficar una
+   * serie continua. La sesión de MySQL ya corre en UTC
+   * (MysqlSessionTimezoneInitializer), así que DATE_FORMAT agrupa en UTC
+   * sin necesidad de convertir nada a mano.
+   */
+  private async getMonthlyStats(): Promise<AdminStatsMonthEntry[]> {
+    const startOfCurrentMonthUtc = new Date(
+      Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1),
+    );
+    const desde = new Date(startOfCurrentMonthUtc);
+    desde.setUTCMonth(desde.getUTCMonth() - (MONTHLY_STATS_MONTHS - 1));
+
+    const rows = await this.reporteRepo
+      .createQueryBuilder('r')
+      .select("DATE_FORMAT(r.fecha_creacion, '%Y-%m')", 'mes')
+      .addSelect('COUNT(*)', 'total')
+      .where('r.fecha_creacion >= :desde', { desde })
+      .groupBy('mes')
+      .getRawMany<{ mes: string; total: string }>();
+
+    const totalByMonth = new Map(
+      rows.map((row) => [row.mes, Number(row.total)]),
+    );
+
+    const series: AdminStatsMonthEntry[] = [];
+    for (let i = MONTHLY_STATS_MONTHS - 1; i >= 0; i--) {
+      const mesDate = new Date(startOfCurrentMonthUtc);
+      mesDate.setUTCMonth(mesDate.getUTCMonth() - i);
+      const mes = `${mesDate.getUTCFullYear()}-${String(mesDate.getUTCMonth() + 1).padStart(2, '0')}`;
+      series.push({ mes, total: totalByMonth.get(mes) ?? 0 });
+    }
+    return series;
   }
 
   // ---- Bitácora ----

@@ -2878,7 +2878,14 @@
         },
         "responses": {
           "200": {
-            "description": "Reporte revisado."
+            "description": "Reporte revisado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericMessageResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "El reporte ya fue revisado.",
@@ -5546,6 +5553,21 @@
           "total"
         ]
       },
+      "AdminStatsMonthEntry": {
+        "type": "object",
+        "properties": {
+          "mes": {
+            "type": "string"
+          },
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "mes",
+          "total"
+        ]
+      },
       "AdminStatsResponse": {
         "type": "object",
         "properties": {
@@ -5566,12 +5588,20 @@
             "items": {
               "$ref": "#/components/schemas/AdminStatsStateEntry"
             }
+          },
+          "porMes": {
+            "description": "Últimos 12 meses en UTC, de más antiguo a más reciente; incluye meses sin reportes con total 0.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminStatsMonthEntry"
+            }
           }
         },
         "required": [
           "porPlataforma",
           "porCategoria",
-          "porEstado"
+          "porEstado",
+          "porMes"
         ]
       },
       "AuditLogEntryResponse": {
