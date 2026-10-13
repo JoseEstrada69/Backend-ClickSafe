@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import { escapeLikePattern } from '../common/utils/escape-like';
 import { isDuplicateKeyError } from '../common/utils/is-duplicate-key-error';
 import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
@@ -29,17 +30,12 @@ import type { StorageService } from '../storage/storage.service.interface';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportQueryDto } from './dto/report-query.dto';
 import { UpdateReportDto } from './dto/update-report.dto';
-import { ReportResponse } from './report-response.interface';
+import { LikeResponse, ReportResponse } from './dto/report-response.dto';
 
 const MAX_EVIDENCES = 5;
 
 interface UploadedFile {
   buffer: Buffer;
-}
-
-export interface LikeResult {
-  totalLikes: number;
-  likedByMe: boolean;
 }
 
 /** Datos ya resueltos para armar un ReportResponse sin volver a consultar la BD por cada fila. */
@@ -128,6 +124,28 @@ export class ReportsService {
     }
     const context = await this.buildAssemblyContext([reporte], userId);
     return this.toResponse(reporte, userId, context);
+  }
+
+  /** GET /me/reports (sección 7): reportes propios, paginados, incluye los anónimos propios (autor sigue null; esMio distingue). */
+  async getMyReports(
+    userId: number,
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<ReportResponse>> {
+    const qb = this.reporteRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.usuario', 'autor')
+      .leftJoinAndSelect('r.plataforma', 'plataforma')
+      .leftJoinAndSelect('r.categoria', 'categoria')
+      .where('r.idUsuario = :userId', { userId })
+      .orderBy('r.fechaCreacion', 'DESC')
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit);
+
+    const [reportes, total] = await qb.getManyAndCount();
+    const context = await this.buildAssemblyContext(reportes, userId);
+    const items = reportes.map((r) => this.toResponse(r, userId, context));
+
+    return { items, page: query.page, limit: query.limit, total };
   }
 
   async createReport(
@@ -233,6 +251,114 @@ export class ReportsService {
   }
 
   /**
+   * POST /reports/:id/evidences: agrega evidencias a un reporte propio ya
+   * creado, solo mientras esté pendiente. El bloqueo pesimista sobre la fila
+   * del reporte (4.3) evita que, entre contar las evidencias actuales e
+   * insertar las nuevas, un admin lo revise a la mitad y el reporte termine
+   * con evidencias añadidas después de validado/rechazado.
+   */
+  async addEvidences(
+    idReporte: number,
+    userId: number,
+    files: UploadedFile[],
+  ): Promise<ReportResponse> {
+    if (files.length === 0) {
+      throw new BadRequestException('Agrega al menos una imagen.');
+    }
+
+    const processed: ProcessedImage[] = await Promise.all(
+      files.map((file) => this.imageProcessing.process(file.buffer)),
+    );
+
+    const savedPaths: string[] = [];
+    try {
+      for (const image of processed) {
+        const fileName = this.imageProcessing.generateFileName();
+        const relativePath = this.imageProcessing.buildRelativePath(fileName);
+        await this.storageService.save(relativePath, image.buffer);
+        savedPaths.push(relativePath);
+      }
+
+      await this.dataSource.transaction(async (manager) => {
+        const reporte = await manager.findOne(Reporte, {
+          where: { idReporte, idUsuario: userId, estado: 'pendiente' },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!reporte) {
+          await this.assertEditable(idReporte, userId);
+        }
+
+        const currentCount = await manager.count(Evidencia, {
+          where: { idReporte },
+        });
+        if (currentCount + processed.length > MAX_EVIDENCES) {
+          throw new BadRequestException({
+            message: `Máximo ${MAX_EVIDENCES} evidencias por reporte.`,
+            code: 'EVIDENCE_LIMIT',
+          });
+        }
+
+        for (let i = 0; i < processed.length; i++) {
+          const relativePath = savedPaths[i];
+          await manager.save(
+            Evidencia,
+            manager.create(Evidencia, {
+              idReporte,
+              nombreArchivo: relativePath.split('/').pop() as string,
+              rutaArchivo: relativePath,
+              tipoArchivo: this.imageProcessing.tipoArchivo,
+              tamanoBytes: processed[i].sizeBytes,
+              hashSha256: processed[i].sha256,
+            }),
+          );
+        }
+      });
+
+      return this.getById(idReporte, userId);
+    } catch (error) {
+      await Promise.all(
+        savedPaths.map((path) =>
+          this.storageService.delete(path).catch(() => undefined),
+        ),
+      );
+      throw error;
+    }
+  }
+
+  /** DELETE /reports/:id/evidences/:evidenceId: solo el autor, y solo mientras el reporte esté pendiente (4.3). */
+  async deleteEvidenceAsOwner(
+    idReporte: number,
+    idEvidencia: number,
+    userId: number,
+  ): Promise<void> {
+    let rutaArchivo: string | undefined;
+
+    await this.dataSource.transaction(async (manager) => {
+      const reporte = await manager.findOne(Reporte, {
+        where: { idReporte, idUsuario: userId, estado: 'pendiente' },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!reporte) {
+        await this.assertEditable(idReporte, userId);
+      }
+
+      const evidencia = await manager.findOne(Evidencia, {
+        where: { idEvidencia, idReporte },
+      });
+      if (!evidencia) {
+        throw new NotFoundException();
+      }
+
+      await manager.delete(Evidencia, { idEvidencia });
+      rutaArchivo = evidencia.rutaArchivo;
+    });
+
+    if (rutaArchivo) {
+      await this.storageService.delete(rutaArchivo).catch(() => undefined);
+    }
+  }
+
+  /**
    * UPDATE atómico, condicionado a autor + pendiente en la misma consulta
    * (4.3): previene la carrera en la que el admin valida justo mientras el
    * autor edita. Si no afectó filas, una lectura aparte (ya sin filtrar por
@@ -326,7 +452,7 @@ export class ReportsService {
     );
   }
 
-  async like(idReporte: number, userId: number): Promise<LikeResult> {
+  async like(idReporte: number, userId: number): Promise<LikeResponse> {
     const reporte = await this.reporteRepo.findOne({ where: { idReporte } });
     if (!reporte) {
       throw new NotFoundException();
@@ -360,7 +486,7 @@ export class ReportsService {
     };
   }
 
-  async unlike(idReporte: number, userId: number): Promise<LikeResult> {
+  async unlike(idReporte: number, userId: number): Promise<LikeResponse> {
     const reporte = await this.reporteRepo.findOne({ where: { idReporte } });
     if (!reporte) {
       throw new NotFoundException();

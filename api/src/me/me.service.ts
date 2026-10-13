@@ -7,22 +7,44 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
 import { RequestMeta, SessionService } from '../auth/session.service';
+import { CommentsService } from '../comments/comments.service';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+import { PaginatedResponse } from '../common/interfaces/paginated-response.interface';
 import { hashPassword, verifyPassword } from '../common/utils/password-hash';
 import { validatePasswordStrength } from '../auth/utils/password-strength';
 import { Usuario } from '../database/entities';
+import { MyCommentResponse } from '../comments/dto/comment-response.dto';
+import { ReportResponse } from '../reports/dto/report-response.dto';
+import { ReportsService } from '../reports/reports.service';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { MeResponse } from './me-response.interface';
+import { MeResponse } from './dto/me-response.dto';
 
-/** Perfil propio (secciones 5.6 y 7: GET/PATCH /me, PATCH /me/password). */
+/** Perfil propio (secciones 5.6 y 7: GET/PATCH /me, PATCH /me/password, GET /me/reports, GET /me/comments). */
 @Injectable()
 export class MeService {
   constructor(
     private readonly auditService: AuditService,
     private readonly sessionService: SessionService,
+    private readonly reportsService: ReportsService,
+    private readonly commentsService: CommentsService,
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
   ) {}
+
+  getMyReports(
+    idUsuario: number,
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<ReportResponse>> {
+    return this.reportsService.getMyReports(idUsuario, query);
+  }
+
+  getMyComments(
+    idUsuario: number,
+    query: PaginationQueryDto,
+  ): Promise<PaginatedResponse<MyCommentResponse>> {
+    return this.commentsService.listMyComments(idUsuario, query);
+  }
 
   async getMe(idUsuario: number): Promise<MeResponse> {
     const usuario = await this.findOrThrow(idUsuario);

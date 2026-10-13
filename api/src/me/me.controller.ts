@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  Query,
   Req,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -13,7 +14,9 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import { MyCommentResponse } from '../comments/dto/comment-response.dto';
 import { ClientInfo } from '../common/decorators/client-info.decorator';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
 import type { RequestMeta } from '../common/interfaces/request-meta.interface';
 import { BEARER_AUTH_SCHEME_NAME } from '../common/swagger/bearer-auth.constant';
@@ -22,9 +25,11 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '../common/swagger/error-responses.decorator';
+import { ApiPaginatedResponse } from '../common/swagger/paginated-response.decorator';
+import { ReportResponse } from '../reports/dto/report-response.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
-import { MeResponse } from './me-response.interface';
+import { MeResponse } from './dto/me-response.dto';
 import { MeService } from './me.service';
 
 @ApiBearerAuth(BEARER_AUTH_SCHEME_NAME)
@@ -40,13 +45,14 @@ export class MeController {
   @ApiOkResponse({
     description:
       'Perfil del usuario autenticado: nombre, correo, rol, fechaRegistro, totpActivo.',
+    type: MeResponse,
   })
   getMe(@Req() req: AuthenticatedRequest): Promise<MeResponse> {
     return this.meService.getMe(this.requireUserId(req));
   }
 
   @Patch()
-  @ApiOkResponse({ description: 'Perfil actualizado.' })
+  @ApiOkResponse({ description: 'Perfil actualizado.', type: MeResponse })
   @ApiBadRequestResponse(
     'El nombre no tiene un formato válido (1 a 100 caracteres).',
   )
@@ -73,6 +79,30 @@ export class MeController {
     const idUsuario = this.requireUserId(req);
     const idSesion = Number(req.user?.sid);
     return this.meService.changePassword(idUsuario, idSesion, dto, client);
+  }
+
+  @Get('reports')
+  @ApiPaginatedResponse(
+    ReportResponse,
+    'Reportes propios, paginados (incluye los anónimos propios).',
+  )
+  getMyReports(
+    @Query() query: PaginationQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.meService.getMyReports(this.requireUserId(req), query);
+  }
+
+  @Get('comments')
+  @ApiPaginatedResponse(
+    MyCommentResponse,
+    'Comentarios propios, paginados (sin los borrados).',
+  )
+  getMyComments(
+    @Query() query: PaginationQueryDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.meService.getMyComments(this.requireUserId(req), query);
   }
 
   private requireUserId(req: AuthenticatedRequest): number {
