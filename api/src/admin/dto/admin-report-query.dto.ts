@@ -1,12 +1,18 @@
 import { IsIn, IsOptional } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
-import type { EstadoReporte } from '../../database/entities';
 
-const ESTADO_VALUES: EstadoReporte[] = ['pendiente', 'validado', 'rechazado'];
+const ESTADO_FILTRO_VALUES = [
+  'pendiente',
+  'validado',
+  'rechazado',
+  'todos',
+] as const;
 
-/** GET /admin/reports: cola de revisión, por defecto solo pendientes (sección 7). */
+export type AdminReportEstadoFiltro = (typeof ESTADO_FILTRO_VALUES)[number];
+
+/** GET /admin/reports: cola de revisión, por defecto solo pendientes; `todos` quita el filtro (sección 7). */
 export class AdminReportQueryDto extends PaginationQueryDto {
   @IsOptional()
-  @IsIn(ESTADO_VALUES)
-  estado?: EstadoReporte = 'pendiente';
+  @IsIn(ESTADO_FILTRO_VALUES)
+  estado?: AdminReportEstadoFiltro = 'pendiente';
 }

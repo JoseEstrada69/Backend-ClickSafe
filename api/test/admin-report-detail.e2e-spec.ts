@@ -189,6 +189,39 @@ describe('Admin (e2e) — detalle de reporte', () => {
     expect(body.esMio).toBe(true);
   }, 30_000);
 
+  it('totalComentarios cuenta solo los comentarios visibles, igual que el detalle público', async () => {
+    const usuarioRepo = usuarioRepoFrom(app);
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const author = await createVerifiedUser(app, usuarioRepo);
+    const commenter = await createVerifiedUser(app, usuarioRepo);
+    const reportId = await createReport(author.accessToken);
+
+    const kept = await request(app.getHttpServer())
+      .post(`/api/v1/reports/${reportId}/comments`)
+      .set('Authorization', `Bearer ${commenter.accessToken}`)
+      .send({ contenido: 'Comentario que se queda visible', anonimo: false });
+    expect(kept.status).toBe(201);
+
+    const deleted = await request(app.getHttpServer())
+      .post(`/api/v1/reports/${reportId}/comments`)
+      .set('Authorization', `Bearer ${commenter.accessToken}`)
+      .send({ contenido: 'Comentario que se borra', anonimo: false });
+    expect(deleted.status).toBe(201);
+    const { id: deletedId } = deleted.body as { id: number };
+    await request(app.getHttpServer())
+      .delete(`/api/v1/comments/${deletedId}`)
+      .set('Authorization', `Bearer ${commenter.accessToken}`);
+
+    const response = await request(app.getHttpServer())
+      .get(`/api/v1/admin/reports/${reportId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+
+    expect(response.status).toBe(200);
+    expect(
+      (response.body as { totalComentarios: number }).totalComentarios,
+    ).toBe(1);
+  }, 30_000);
+
   it('un id inexistente responde 404', async () => {
     const usuarioRepo = usuarioRepoFrom(app);
     const admin = await createVerifiedAdmin(app, usuarioRepo);

@@ -2765,14 +2765,15 @@
               "enum": [
                 "pendiente",
                 "validado",
-                "rechazado"
+                "rechazado",
+                "todos"
               ]
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Cola de reportes (por defecto, pendientes), con autor real.",
+            "description": "Cola de reportes (por defecto, pendientes; estado=todos quita el filtro), con autor real.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5378,6 +5379,9 @@
           },
           "esMio": {
             "type": "boolean"
+          },
+          "totalComentarios": {
+            "type": "number"
           }
         },
         "required": [
@@ -5396,7 +5400,8 @@
           "fechaCreacion",
           "fechaActualizacion",
           "revision",
-          "esMio"
+          "esMio",
+          "totalComentarios"
         ]
       },
       "ReviewReportDto": {
