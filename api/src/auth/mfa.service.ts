@@ -212,7 +212,13 @@ export class MfaService {
         ip: meta.ip,
         userAgent: meta.userAgent,
       });
-      throw new UnauthorizedException('Código inválido');
+      // 400 (no 401, sección 7): mismo motivo que INVALID_CURRENT_PASSWORD
+      // -- un 401 aquí hace que algunos clientes lo confundan con una
+      // sesión vencida y reintenten solos tras refrescar el token.
+      throw new BadRequestException({
+        message: 'Código inválido.',
+        code: 'INVALID_TOTP',
+      });
     }
 
     await this.usuarioRepo.update(usuario.idUsuario, {

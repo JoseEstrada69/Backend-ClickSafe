@@ -77,7 +77,7 @@ describe('Admin (e2e) — estado de usuarios', () => {
     expect(response.status).toBe(400);
     const body = response.body as { message: string; code?: string };
     expect(body.message).toBe('No puedes cambiar tu propio estado.');
-    expect(body.code).toBeUndefined();
+    expect(body.code).toBe('OWN_STATUS');
   });
 
   it('un admin (A) suspende a otro admin (B): B queda inactivo, sus sesiones se revocan y se audita usuario_suspendido', async () => {

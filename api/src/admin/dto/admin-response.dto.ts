@@ -50,6 +50,13 @@ export class AdminReportDetailResponse extends AdminReportResponse {
   totalComentarios!: number;
 }
 
+/** Nunca incluye quién denunció (ni id, ni nombre, ni correo) -- solo motivo/detalle/fecha. */
+export class FlagRefResponse {
+  motivo!: MotivoDenuncia;
+  detalle!: string | null;
+  fecha!: string;
+}
+
 export class FlaggedCommentResponse {
   id!: number;
   contenido!: string;
@@ -58,6 +65,8 @@ export class FlaggedCommentResponse {
   autor!: AdminUserRefResponse;
   reporteId!: number;
   motivos!: MotivoDenuncia[];
+  /** Denuncias no resueltas, sin datos de quién denunció. */
+  denuncias!: FlagRefResponse[];
   fechaCreacion!: string;
 }
 

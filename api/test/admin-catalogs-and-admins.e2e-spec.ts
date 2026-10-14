@@ -119,16 +119,37 @@ describe('Admin (e2e) — admins y catálogos', () => {
       expect(token).not.toBeNull();
     });
 
-    it('un código TOTP incorrecto responde 401 y no crea la cuenta', async () => {
+    it('un código TOTP incorrecto responde 400 INVALID_TOTP y no crea la cuenta', async () => {
       const correo = `admin-rechazado-${Date.now()}@example.com`;
       const response = await request(app.getHttpServer() as App)
         .post('/api/v1/admin/admins')
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({ nombre: 'Rechazado', correo, totp: '000000' });
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(400);
+      expect((response.body as { code?: string }).code).toBe('INVALID_TOTP');
       const existing = await usuarioRepo.findOne({ where: { correo } });
       expect(existing).toBeNull();
+    });
+
+    it('un correo ya registrado responde 409 EMAIL_TAKEN', async () => {
+      const correo = `admin-duplicado-${Date.now()}@example.com`;
+      const first = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/admins')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: 'Primero', correo, totp: await freshAdminTotpCode() });
+      expect(first.status).toBe(201);
+
+      const second = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/admins')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({
+          nombre: 'Segundo',
+          correo,
+          totp: await freshAdminTotpCode(),
+        });
+      expect(second.status).toBe(409);
+      expect((second.body as { code?: string }).code).toBe('EMAIL_TAKEN');
     });
 
     it('un usuario normal no puede crear admins (403)', async () => {

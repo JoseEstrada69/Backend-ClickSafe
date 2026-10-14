@@ -57,6 +57,17 @@ export function ApiForbiddenResponse(description: string, code?: ErrorCode) {
   );
 }
 
+/** 409 — conflicto con el estado actual del recurso (duplicado, ya resuelto/moderado, etc.). */
+export function ApiConflictResponse(description: string, code?: ErrorCode) {
+  return applyDecorators(
+    ApiResponse({
+      status: 409,
+      description,
+      schema: { example: errorExample(409, 'Conflict', description, code) },
+    }),
+  );
+}
+
 /** 429 — límite de peticiones excedido (4.4). */
 export function ApiTooManyRequestsResponse() {
   return applyDecorators(

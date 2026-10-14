@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { NestFactory } from '@nestjs/core';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import sharp from 'sharp';
@@ -16,6 +17,7 @@ import {
   Evidencia,
   EstadoReporte,
   LikeReporte,
+  MotivoDenuncia,
   Notificacion,
   Plataforma,
   Reporte,
@@ -25,6 +27,7 @@ import {
 
 const DEMO_EMAIL_SUFFIX = '@demo.clicksafe.local';
 const TOTAL_REPORTES_NORMALES = 23;
+const TOTAL_USUARIOS_NORMALES = 23; // > 20 en total (sección 7, panel de admin, Fase 4).
 
 /**
  * npm run seed:demo. Llena la base configurada en el .env normal de la API
@@ -39,9 +42,13 @@ const TOTAL_REPORTES_NORMALES = 23;
  * no debería crear nada nuevo.
  *
  * Se niega a correr si NODE_ENV=production (esto es solo para
- * desarrollo/laboratorio). NUNCA crea un admin nuevo (sería una vía no
- * documentada de volverse admin, sección 1): usa el admin que ya exista de
- * `npm run seed:admin` para autoría de las revisiones de ejemplo.
+ * desarrollo/laboratorio). Usa el admin que ya exista de `npm run
+ * seed:admin` para autoría de las revisiones de ejemplo, y además crea un
+ * SEGUNDO admin de demo (contraseña aleatoria inutilizable, igual que
+ * POST /admin/admins) para poder probar el panel con más de un admin --
+ * a diferencia del resto del script, esto es una excepción deliberada:
+ * normalmente ningún script de seed debe poder crear admins (sección 1),
+ * pero aquí se pidió explícitamente para la demo del panel.
  */
 
 interface ResultadoElemento {
@@ -208,12 +215,36 @@ async function run(): Promise<void> {
     }
 
     // --- Usuarios: find-or-create por correo (estable entre corridas) ---
-    const nombresUsuarios = ['Ana García', 'Luis Fernández', 'María Torres'];
+    const nombresUsuarios = [
+      'Ana García',
+      'Luis Fernández',
+      'María Torres',
+      'Carlos Ruiz',
+      'Sofía Hernández',
+      'Jorge Martínez',
+      'Valentina López',
+      'Diego Ramírez',
+      'Camila Flores',
+      'Andrés Gómez',
+      'Paula Díaz',
+      'Fernando Castro',
+      'Daniela Morales',
+      'Ricardo Ortiz',
+      'Gabriela Vargas',
+      'Sebastián Rojas',
+      'Isabel Reyes',
+      'Emilio Navarro',
+      'Renata Chávez',
+      'Mateo Mendoza',
+      'Lucía Guerrero',
+      'Tomás Silva',
+      'Ximena Campos',
+    ];
     const usuarios: Usuario[] = [];
     const usuariosResultado: ResultadoElemento[] = [];
     const passwordsNuevas: { correo: string; password: string }[] = [];
 
-    for (let i = 0; i < nombresUsuarios.length; i++) {
+    for (let i = 0; i < TOTAL_USUARIOS_NORMALES; i++) {
       const correo = `demo.usuario${i + 1}${DEMO_EMAIL_SUFFIX}`;
       const existente = await usuarioRepo.findOne({ where: { correo } });
       if (existente) {
@@ -224,7 +255,7 @@ async function run(): Promise<void> {
       const password = generateStrongPassword(18);
       const nuevo = await usuarioRepo.save(
         usuarioRepo.create({
-          nombre: nombresUsuarios[i],
+          nombre: nombresUsuarios[i % nombresUsuarios.length],
           correo,
           correoVerificado: true,
           passwordHash: await hashPassword(password),
@@ -235,6 +266,44 @@ async function run(): Promise<void> {
       usuarios.push(nuevo);
       usuariosResultado.push({ etiqueta: correo, creado: true });
       passwordsNuevas.push({ correo, password });
+    }
+
+    // El último usuario de la lista queda suspendido, para poder probar el
+    // panel con un usuario inactivo. Idempotente: si ya estaba suspendido
+    // de una corrida anterior, no hace nada (ni lo reactiva ni lo audita
+    // de nuevo).
+    const usuarioASuspender = usuarios[usuarios.length - 1];
+    let usuarioSuspendidoEstaCorrida = false;
+    if (usuarioASuspender.activo) {
+      await usuarioRepo.update(usuarioASuspender.idUsuario, {
+        activo: false,
+      });
+      usuarioASuspender.activo = false;
+      usuarioSuspendidoEstaCorrida = true;
+    }
+
+    // --- Segundo admin de demo: contraseña inutilizable, igual que
+    // POST /admin/admins (sección 8/7). Nunca se le manda correo de
+    // recuperación aquí (el script no depende de que Mailpit esté
+    // corriendo) -- quien quiera entrar con esta cuenta usa
+    // /auth/forgot-password a mano. ---
+    const SEGUNDO_ADMIN_CORREO = `demo.admin2${DEMO_EMAIL_SUFFIX}`;
+    let segundoAdmin = await usuarioRepo.findOne({
+      where: { correo: SEGUNDO_ADMIN_CORREO },
+    });
+    let segundoAdminCreado = false;
+    if (!segundoAdmin) {
+      segundoAdmin = await usuarioRepo.save(
+        usuarioRepo.create({
+          nombre: 'Admin Demo Dos',
+          correo: SEGUNDO_ADMIN_CORREO,
+          correoVerificado: true,
+          passwordHash: await hashPassword(randomBytes(32).toString('hex')),
+          rol: 'admin',
+          activo: true,
+        }),
+      );
+      segundoAdminCreado = true;
     }
 
     // --- Catálogos ya existentes (database/clicksafe_db.sql) ---
@@ -452,11 +521,168 @@ async function run(): Promise<void> {
       }
     }
 
+    // --- Reporte dedicado a probar moderación de comentarios (Fase 4):
+    // find-or-create por título, igual que los demás reportes. ---
+    const MODERATION_REPORT_TITLE =
+      '[Demo moderación] Reporte para probar denuncias y moderación de comentarios';
+    let moderationReport = await reporteRepo.findOne({
+      where: { titulo: MODERATION_REPORT_TITLE },
+    });
+    if (!moderationReport) {
+      const fechaModeracion = fechaHaceMeses(1, 10, 10);
+      moderationReport = await reporteRepo.save(
+        reporteRepo.create({
+          idUsuario: usuarios[0].idUsuario,
+          idPlataforma: normales[0].idPlataforma,
+          plataformaOtra: null,
+          idCategoria: categorias[0].idCategoria,
+          titulo: MODERATION_REPORT_TITLE,
+          descripcion:
+            'Reporte de ejemplo dedicado a probar la moderación de ' +
+            'comentarios (demo, Fase 4). No corresponde a un caso real.',
+          urlPublicacion: 'https://tienda-ejemplo.demo/producto-moderacion',
+          anonimo: false,
+          estado: 'validado',
+          fechaCreacion: fechaModeracion,
+          fechaActualizacion: fechaModeracion,
+        }),
+      );
+      reportesResultado.push({
+        etiqueta: MODERATION_REPORT_TITLE,
+        creado: true,
+      });
+      await revisionRepo.save(
+        revisionRepo.create({
+          idReporte: moderationReport.idReporte,
+          idAdministrador: admin.idUsuario,
+          decision: 'validado',
+          comentario: 'Caso verificado, evidencia suficiente.',
+        }),
+      );
+    } else {
+      reportesResultado.push({
+        etiqueta: MODERATION_REPORT_TITLE,
+        creado: false,
+      });
+    }
+
+    // find-or-create por `contenido` exacto (viven en el mismo reporte, así
+    // que el título no sirve de identificador aquí).
+    async function findOrCreateComentarioModeracion(
+      contenido: string,
+      idUsuarioAutor: number,
+    ): Promise<{ comentario: Comentario; creado: boolean }> {
+      const existente = await comentarioRepo.findOne({
+        where: { idReporte: moderationReport!.idReporte, contenido },
+      });
+      if (existente) {
+        return { comentario: existente, creado: false };
+      }
+      const nuevo = await comentarioRepo.save(
+        comentarioRepo.create({
+          idReporte: moderationReport!.idReporte,
+          idUsuario: idUsuarioAutor,
+          contenido,
+          anonimo: false,
+        }),
+      );
+      return { comentario: nuevo, creado: true };
+    }
+
+    // 1) 3+ denuncias de motivos distintos, cada una con detalle -> oculto_auto.
+    const { comentario: comentarioModeracionA, creado: creadoA } =
+      await findOrCreateComentarioModeracion(
+        'Comentario de ejemplo con 3 denuncias de motivos distintos para la demo de moderación.',
+        usuarios[1].idUsuario,
+      );
+    if (creadoA) {
+      const denunciantesA = usuarios
+        .filter((u) => u.idUsuario !== comentarioModeracionA.idUsuario)
+        .slice(0, 3);
+      const motivosA: MotivoDenuncia[] = [
+        'spam',
+        'acoso',
+        'informacion_personal',
+      ];
+      for (let k = 0; k < denunciantesA.length; k++) {
+        await denunciaRepo.save(
+          denunciaRepo.create({
+            idComentario: comentarioModeracionA.idComentario,
+            idUsuario: denunciantesA[k].idUsuario,
+            motivo: motivosA[k % motivosA.length],
+            detalle: `Detalle de ejemplo para la denuncia por ${motivosA[k % motivosA.length]} (demo).`,
+          }),
+        );
+        denunciasCreadas++;
+      }
+      await comentarioRepo.update(
+        { idComentario: comentarioModeracionA.idComentario },
+        { estado: 'oculto_auto', totalDenuncias: denunciantesA.length },
+      );
+      comentariosCreados++;
+    }
+
+    // 2) Una denuncia, todavía por debajo del umbral -> sigue visible, pendiente.
+    const { comentario: comentarioModeracionB, creado: creadoB } =
+      await findOrCreateComentarioModeracion(
+        'Comentario de ejemplo con una denuncia pendiente, todavía visible (demo de moderación).',
+        usuarios[2].idUsuario,
+      );
+    if (creadoB) {
+      const denuncianteB = usuarios.find(
+        (u) => u.idUsuario !== comentarioModeracionB.idUsuario,
+      );
+      if (denuncianteB) {
+        await denunciaRepo.save(
+          denunciaRepo.create({
+            idComentario: comentarioModeracionB.idComentario,
+            idUsuario: denuncianteB.idUsuario,
+            motivo: 'otro',
+            detalle:
+              'Detalle de ejemplo para una denuncia todavía pendiente (demo).',
+          }),
+        );
+        denunciasCreadas++;
+        await comentarioRepo.update(
+          { idComentario: comentarioModeracionB.idComentario },
+          { totalDenuncias: 1 },
+        );
+      }
+      comentariosCreados++;
+    }
+
+    // 3) Contenido XSS: el panel nunca debe interpretarlo como HTML (4.7).
+    const { creado: creadoC } = await findOrCreateComentarioModeracion(
+      '<img src=x onerror=alert(1)>',
+      usuarios[3].idUsuario,
+    );
+    if (creadoC) {
+      comentariosCreados++;
+    }
+
+    // 4) Cadena larga sin espacios: prueba el ajuste de texto del panel.
+    const cadenaLarga = Array.from({ length: 300 }, (_, idx) =>
+      String.fromCharCode(97 + ((idx * 7) % 26)),
+    ).join('');
+    const { creado: creadoD } = await findOrCreateComentarioModeracion(
+      cadenaLarga,
+      usuarios[4].idUsuario,
+    );
+    if (creadoD) {
+      comentariosCreados++;
+    }
+
     // --- Resumen ---
     console.log('--- Usuarios demo ---');
     for (const { etiqueta, creado } of usuariosResultado) {
       console.log(`  [${creado ? 'creado' : 'ya existía'}] ${etiqueta}`);
     }
+    console.log(
+      `  [${usuarioSuspendidoEstaCorrida ? 'suspendido en esta corrida' : 'ya estaba suspendido'}] ${usuarioASuspender.correo}`,
+    );
+    console.log(
+      `  [${segundoAdminCreado ? 'creado' : 'ya existía'}] ${SEGUNDO_ADMIN_CORREO} (segundo admin, contraseña inutilizable)`,
+    );
     if (passwordsNuevas.length > 0) {
       console.log(
         '  Contraseñas de los usuarios recién creados (solo se muestran aquí):',

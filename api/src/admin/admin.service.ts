@@ -42,6 +42,7 @@ import {
   AdminStatsResponse,
   AdminUserResponse,
   AuditLogEntryResponse,
+  FlagRefResponse,
   FlaggedCommentResponse,
 } from './dto/admin-response.dto';
 import { AdminReportQueryDto } from './dto/admin-report-query.dto';
@@ -316,16 +317,34 @@ export class AdminService {
       .getMany();
 
     const ids = comentarios.map((c) => c.idComentario);
+    // Solo motivo/detalle/fecha -- nunca idUsuario (sección 1 regla 6: la
+    // identidad de quien denuncia no se expone, ni siquiera al admin).
     const denuncias = ids.length
       ? await this.denunciaRepo.find({
           where: { idComentario: In(ids), resuelta: false },
+          select: {
+            idComentario: true,
+            motivo: true,
+            detalle: true,
+            fechaDenuncia: true,
+          },
         })
       : [];
     const motivosByComentario = new Map<number, Set<string>>();
+    const denunciasByComentario = new Map<number, FlagRefResponse[]>();
     for (const denuncia of denuncias) {
-      const set = motivosByComentario.get(denuncia.idComentario) ?? new Set();
-      set.add(denuncia.motivo);
-      motivosByComentario.set(denuncia.idComentario, set);
+      const motivosSet =
+        motivosByComentario.get(denuncia.idComentario) ?? new Set();
+      motivosSet.add(denuncia.motivo);
+      motivosByComentario.set(denuncia.idComentario, motivosSet);
+
+      const lista = denunciasByComentario.get(denuncia.idComentario) ?? [];
+      lista.push({
+        motivo: denuncia.motivo,
+        detalle: denuncia.detalle,
+        fecha: denuncia.fechaDenuncia.toISOString(),
+      });
+      denunciasByComentario.set(denuncia.idComentario, lista);
     }
 
     return comentarios.map((c) => ({
@@ -338,10 +357,21 @@ export class AdminService {
       motivos: Array.from(
         motivosByComentario.get(c.idComentario) ?? [],
       ) as FlaggedCommentResponse['motivos'],
+      denuncias: denunciasByComentario.get(c.idComentario) ?? [],
       fechaCreacion: c.fechaCreacion.toISOString(),
     }));
   }
 
+  /**
+   * "en moderación" = misma condición que listFlaggedComments:
+   * oculto_auto, o visible con denuncias pendientes. El UPDATE lleva esa
+   * condición en su propio WHERE (atómico, 4.3) en vez de leerla antes:
+   * así, si dos admins moderan el mismo comentario a la vez, la fila queda
+   * bloqueada hasta que el primero confirma su cambio, y el segundo
+   * UPDATE vuelve a evaluar el WHERE contra el estado YA actualizado
+   * (estado/total_denuncias ya no cumplen la condición) y afecta 0 filas
+   * -- nunca aplica la acción dos veces ni manda una segunda notificación.
+   */
   async moderateComment(
     idComentario: number,
     adminId: number,
@@ -356,23 +386,40 @@ export class AdminService {
 
     const nuevoEstado = dto.accion === 'confirmar' ? 'oculto_admin' : 'visible';
 
-    await this.dataSource.transaction(async (manager) => {
-      await manager.update(
-        Comentario,
-        { idComentario },
-        {
+    const seModero = await this.dataSource.transaction(async (manager) => {
+      const updateResult = await manager
+        .createQueryBuilder()
+        .update(Comentario)
+        .set({
           estado: nuevoEstado,
           idModerador: adminId,
           fechaModeracion: new Date(),
           totalDenuncias: 0,
-        },
-      );
+        })
+        .where('id_comentario = :idComentario', { idComentario })
+        .andWhere(
+          "(estado = 'oculto_auto' OR (estado = 'visible' AND total_denuncias > 0))",
+        )
+        .execute();
+
+      if (!updateResult.affected) {
+        return false;
+      }
+
       await manager.update(
         DenunciaComentario,
         { idComentario, resuelta: false },
         { resuelta: true },
       );
+      return true;
     });
+
+    if (!seModero) {
+      throw new ConflictException({
+        message: 'El comentario no está en moderación.',
+        code: 'COMMENT_NOT_FLAGGED',
+      });
+    }
 
     await this.auditService.log({
       idUsuario: adminId,
@@ -430,7 +477,10 @@ export class AdminService {
     dto: UpdateUserStatusDto,
   ): Promise<void> {
     if (idUsuario === adminId) {
-      throw new BadRequestException('No puedes cambiar tu propio estado.');
+      throw new BadRequestException({
+        message: 'No puedes cambiar tu propio estado.',
+        code: 'OWN_STATUS',
+      });
     }
     const usuario = await this.usuarioRepo.findOne({ where: { idUsuario } });
     if (!usuario) {
@@ -445,9 +495,10 @@ export class AdminService {
         where: { rol: 'admin', activo: true },
       });
       if (activeAdmins <= 1) {
-        throw new BadRequestException(
-          'No puedes desactivar al último admin activo.',
-        );
+        throw new BadRequestException({
+          message: 'No puedes desactivar al último admin activo.',
+          code: 'LAST_ACTIVE_ADMIN',
+        });
       }
     }
 
@@ -489,7 +540,10 @@ export class AdminService {
     const correo = dto.correo.trim().toLowerCase();
     const existing = await this.usuarioRepo.findOne({ where: { correo } });
     if (existing) {
-      throw new ConflictException('El correo ya está en uso.');
+      throw new ConflictException({
+        message: 'El correo ya está en uso.',
+        code: 'EMAIL_TAKEN',
+      });
     }
 
     const passwordHash = await hashPassword(randomBytes(32).toString('hex'));
@@ -507,7 +561,10 @@ export class AdminService {
       );
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        throw new ConflictException('El correo ya está en uso.');
+        throw new ConflictException({
+          message: 'El correo ya está en uso.',
+          code: 'EMAIL_TAKEN',
+        });
       }
       throw error;
     }
