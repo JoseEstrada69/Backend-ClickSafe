@@ -26,6 +26,7 @@ import { ParsePositiveIntPipe } from '../common/pipes/parse-positive-int.pipe';
 import { BEARER_AUTH_SCHEME_NAME } from '../common/swagger/bearer-auth.constant';
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
@@ -130,7 +131,18 @@ export class AdminController {
 
   @Patch('comments/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: 'Comentario moderado.' })
+  @ApiNoContentResponse({
+    description:
+      '"confirmar": estado -> oculto_admin, sus denuncias no resueltas ' +
+      'quedan resuelta=true, total_denuncias vuelve a 0, y se notifica al ' +
+      'autor (comentario_ocultado). "restaurar": estado -> visible, mismas ' +
+      'denuncias resueltas y total_denuncias a 0, pero SIN notificar a ' +
+      'nadie.',
+  })
+  @ApiConflictResponse(
+    'El comentario ya no está en moderación (otro admin ya lo resolvió, o nunca tuvo denuncias pendientes).',
+    'COMMENT_NOT_FLAGGED',
+  )
   async moderateComment(
     @Param('id', ParsePositiveIntPipe) id: number,
     @Body() dto: ModerateCommentDto,
@@ -150,9 +162,13 @@ export class AdminController {
 
   @Patch('users/:id/status')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({ description: 'Estado del usuario actualizado.' })
+  @ApiNoContentResponse({
+    description:
+      'Estado del usuario actualizado. Suspender (activo:false) revoca ' +
+      'todas las sesiones del usuario; reactivar no revoca nada.',
+  })
   @ApiBadRequestResponse(
-    'No puedes cambiar tu propio estado, o dejarías el sistema sin admins activos.',
+    'No puedes cambiar tu propio estado (OWN_STATUS), o dejarías el sistema sin admins activos (LAST_ACTIVE_ADMIN).',
   )
   async updateUserStatus(
     @Param('id', ParsePositiveIntPipe) id: number,
@@ -169,10 +185,13 @@ export class AdminController {
       'Admin creado. Recibe por correo un código de recuperación (5.7) para definir su contraseña.',
     type: AdminUserResponse,
   })
-  @ApiBadRequestResponse('Datos con formato inválido.')
-  @ApiUnauthorizedResponse(
-    'El código TOTP de reautenticación (del admin que llama) es incorrecto o la cuenta está bloqueada.',
+  @ApiBadRequestResponse(
+    'Código TOTP de reautenticación incorrecto (INVALID_TOTP, del admin que llama), o datos con formato inválido.',
   )
+  @ApiUnauthorizedResponse(
+    'La cuenta del admin que llama está bloqueada por intentos previos, o no tiene 2FA activo.',
+  )
+  @ApiConflictResponse('El correo ya está en uso.', 'EMAIL_TAKEN')
   createAdmin(
     @Body() dto: CreateAdminDto,
     @Req() req: AuthenticatedRequest,

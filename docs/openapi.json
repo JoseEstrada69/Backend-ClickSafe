@@ -3221,7 +3221,7 @@
         },
         "responses": {
           "204": {
-            "description": "Comentario moderado."
+            "description": "\"confirmar\": estado -> oculto_admin, sus denuncias no resueltas quedan resuelta=true, total_denuncias vuelve a 0, y se notifica al autor (comentario_ocultado). \"restaurar\": estado -> visible, mismas denuncias resueltas y total_denuncias a 0, pero SIN notificar a nadie."
           },
           "401": {
             "description": "Credenciales inválidas, o token/código inválido o expirado.",
@@ -3248,6 +3248,22 @@
                     "error": "Forbidden",
                     "message": "Requiere rol admin con 2FA completado.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El comentario ya no está en moderación (otro admin ya lo resolvió, o nunca tuvo denuncias pendientes).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "error": "Conflict",
+                    "message": "El comentario ya no está en moderación (otro admin ya lo resolvió, o nunca tuvo denuncias pendientes).",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "COMMENT_NOT_FLAGGED"
                   }
                 }
               }
@@ -3422,17 +3438,17 @@
         },
         "responses": {
           "204": {
-            "description": "Estado del usuario actualizado."
+            "description": "Estado del usuario actualizado. Suspender (activo:false) revoca todas las sesiones del usuario; reactivar no revoca nada."
           },
           "400": {
-            "description": "No puedes cambiar tu propio estado, o dejarías el sistema sin admins activos.",
+            "description": "No puedes cambiar tu propio estado (OWN_STATUS), o dejarías el sistema sin admins activos (LAST_ACTIVE_ADMIN).",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "statusCode": 400,
                     "error": "Bad Request",
-                    "message": "No puedes cambiar tu propio estado, o dejarías el sistema sin admins activos.",
+                    "message": "No puedes cambiar tu propio estado (OWN_STATUS), o dejarías el sistema sin admins activos (LAST_ACTIVE_ADMIN).",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
                   }
                 }
@@ -3521,14 +3537,14 @@
             }
           },
           "400": {
-            "description": "Datos con formato inválido.",
+            "description": "Código TOTP de reautenticación incorrecto (INVALID_TOTP, del admin que llama), o datos con formato inválido.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "statusCode": 400,
                     "error": "Bad Request",
-                    "message": "Datos con formato inválido.",
+                    "message": "Código TOTP de reautenticación incorrecto (INVALID_TOTP, del admin que llama), o datos con formato inválido.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
                   }
                 }
@@ -3536,14 +3552,14 @@
             }
           },
           "401": {
-            "description": "El código TOTP de reautenticación (del admin que llama) es incorrecto o la cuenta está bloqueada.",
+            "description": "La cuenta del admin que llama está bloqueada por intentos previos, o no tiene 2FA activo.",
             "content": {
               "application/json": {
                 "schema": {
                   "example": {
                     "statusCode": 401,
                     "error": "Unauthorized",
-                    "message": "El código TOTP de reautenticación (del admin que llama) es incorrecto o la cuenta está bloqueada.",
+                    "message": "La cuenta del admin que llama está bloqueada por intentos previos, o no tiene 2FA activo.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
                   }
                 }
@@ -3560,6 +3576,22 @@
                     "error": "Forbidden",
                     "message": "Requiere rol admin con 2FA completado.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El correo ya está en uso.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "error": "Conflict",
+                    "message": "El correo ya está en uso.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "EMAIL_TAKEN"
                   }
                 }
               }
@@ -5423,6 +5455,33 @@
           "decision"
         ]
       },
+      "FlagRefResponse": {
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "type": "string",
+            "enum": [
+              "spam",
+              "acoso",
+              "lenguaje_ofensivo",
+              "informacion_personal",
+              "otro"
+            ]
+          },
+          "detalle": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "motivo",
+          "detalle",
+          "fecha"
+        ]
+      },
       "FlaggedCommentResponse": {
         "type": "object",
         "properties": {
@@ -5463,6 +5522,13 @@
               ]
             }
           },
+          "denuncias": {
+            "description": "Denuncias no resueltas, sin datos de quién denunció.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FlagRefResponse"
+            }
+          },
           "fechaCreacion": {
             "type": "string"
           }
@@ -5475,6 +5541,7 @@
           "autor",
           "reporteId",
           "motivos",
+          "denuncias",
           "fechaCreacion"
         ]
       },
