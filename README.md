@@ -90,6 +90,7 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
    ```powershell
    npm run start:dev    # servidor en modo desarrollo (http://localhost:3000)
    npm run seed:admin   # crea el primer admin (lee SEED_ADMIN_NOMBRE/CORREO del .env)
+   npm run seed:demo    # datos de ejemplo para la demo/el panel de admin (ver abajo)
    npm run lint          # ESLint
    npm test              # pruebas unitarias (Jest)
    npm run test:e2e      # pruebas end-to-end (Jest + supertest); necesita api/.env.test, ver abajo
@@ -97,6 +98,32 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
    ```
    Con `SWAGGER_ENABLED=true` en `api/.env`, la documentación queda en
    `http://localhost:3000/api/docs`.
+
+### Datos de ejemplo (`npm run seed:demo`)
+
+Crea, contra la base de **desarrollo** (nunca contra producción: se niega a
+correr si `NODE_ENV=production`), 3 usuarios normales con correo ya
+verificado y unos 25 reportes repartidos en los 3 estados, en varias
+plataformas (incluida "Otra") y categorías, con fechas distribuidas en los
+últimos 12 meses, algunos anónimos, varios con evidencias (imágenes simples
+generadas con `sharp`, guardadas con el mismo `StorageService` que usa la
+API real), comentarios, likes, y un comentario oculto automáticamente por 3
+denuncias. Incluye además dos reportes pensados para probar el panel de
+administrador: uno con el título `<img src=x onerror=alert(1)>` (confirma
+que el panel nunca lo interpreta como HTML) y otro con la URL
+`https://mercadolibre.com.mx@estafa.example` (confirma que el panel no lo
+muestra como si fuera un enlace legítimo a Mercado Libre; la API pública
+rechazaría esa URL si viniera de un reporte real, sección 4.8).
+
+Requiere que ya exista un admin (`npm run seed:admin` primero: las
+revisiones de ejemplo quedan a su nombre; el script nunca crea un admin
+nuevo).
+
+Es **idempotente por elemento**, no "todo o nada": cada usuario se busca por
+`correo` y cada reporte por `titulo` exacto, así que correrlo varias veces
+es seguro — solo crea lo que todavía falte (nunca borra ni modifica nada
+existente) y al final imprime qué creó y qué ya existía. Las contraseñas de
+los usuarios recién creados solo se muestran esa vez, en la consola.
 
 ## Base de datos para las pruebas e2e
 
