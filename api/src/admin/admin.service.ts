@@ -104,7 +104,7 @@ export class AdminService {
       .leftJoinAndSelect('r.plataforma', 'plataforma')
       .leftJoinAndSelect('r.categoria', 'categoria');
 
-    if (query.estado) {
+    if (query.estado && query.estado !== 'todos') {
       qb.andWhere('r.estado = :estado', { estado: query.estado });
     }
     qb.orderBy('r.fechaCreacion', 'ASC')
@@ -170,7 +170,7 @@ export class AdminService {
       throw new NotFoundException();
     }
 
-    const [evidencias, revision] = await Promise.all([
+    const [evidencias, revision, totalComentarios] = await Promise.all([
       this.evidenciaRepo.find({
         where: { idReporte },
         order: { idEvidencia: 'ASC' },
@@ -179,6 +179,7 @@ export class AdminService {
         where: { idReporte },
         order: { fechaRevision: 'DESC' },
       }),
+      this.comentarioRepo.count({ where: { idReporte, estado: 'visible' } }),
     ]);
 
     return {
@@ -213,6 +214,7 @@ export class AdminService {
           }
         : null,
       esMio: reporte.idUsuario === adminId,
+      totalComentarios,
     };
   }
 

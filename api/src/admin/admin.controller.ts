@@ -67,7 +67,7 @@ export class AdminController {
   @Get('reports')
   @ApiPaginatedResponse(
     AdminReportResponse,
-    'Cola de reportes (por defecto, pendientes), con autor real.',
+    'Cola de reportes (por defecto, pendientes; estado=todos quita el filtro), con autor real.',
   )
   listReports(@Query() query: AdminReportQueryDto) {
     return this.adminService.listReports(query);

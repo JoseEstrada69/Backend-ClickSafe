@@ -43,10 +43,11 @@ export class AdminReportResponse {
   fechaActualizacion!: string;
 }
 
-/** GET /admin/reports/:id (sección 7): detalle con revisión (si ya la tiene) y esMio (si el admin es el autor). */
+/** GET /admin/reports/:id (sección 7): detalle con revisión (si ya la tiene), esMio (si el admin es el autor) y totalComentarios (solo visibles, igual que el detalle público). */
 export class AdminReportDetailResponse extends AdminReportResponse {
   revision!: ReportRevisionResponse | null;
   esMio!: boolean;
+  totalComentarios!: number;
 }
 
 export class FlaggedCommentResponse {
