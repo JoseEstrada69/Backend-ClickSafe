@@ -22,4 +22,7 @@ export type AuditAction =
   | 'catalogo_modificado'
   // Agregada en Fase 6: DELETE /admin/reports/:id/evidences/:evidenceId
   // (sección 6, punto 8) no tenía una acción dedicada en la lista original.
-  | 'evidencia_eliminada';
+  | 'evidencia_eliminada'
+  // PATCH /me/password con passwordActual incorrecta: antes no se auditaba
+  // ni contaba para el bloqueo progresivo (5.1/5.4), solo lanzaba 401.
+  | 'password_cambio_fallo';

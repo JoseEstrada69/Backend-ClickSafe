@@ -16,7 +16,8 @@ export type ErrorCode =
   | 'OWN_COMMENT'
   | 'ALREADY_FLAGGED'
   | 'CATALOG_INACTIVE'
-  | 'PLATFORM_OTHER_REQUIRED';
+  | 'PLATFORM_OTHER_REQUIRED'
+  | 'INVALID_CURRENT_PASSWORD';
 
 /** Cuerpo de respuesta que acepta HttpException para llevar un `code` estable. */
 export interface CodedErrorBody {

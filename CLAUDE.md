@@ -274,7 +274,8 @@ Registrar como mínimo: `login` (éxito/fallo), `cuenta_bloqueada`, `logout`,
 `refresh_reuso_detectado`, `registro`, `correo_verificado`,
 `password_recuperacion_solicitada`, `password_cambiada`, `2fa_activado`,
 `2fa_fallo`, `reporte_revisado`, `comentario_moderado`, `usuario_suspendido`,
-`usuario_reactivado`, `admin_creado`, `catalogo_modificado`.
+`usuario_reactivado`, `admin_creado`, `catalogo_modificado`,
+`password_cambio_fallo` (PATCH /me/password con `passwordActual` incorrecta).
 **`detalle` nunca contiene contraseñas, tokens, códigos ni secretos.**
 Si falla escribir la bitácora, se registra en el log de la app pero no
 se revela al cliente.
@@ -460,7 +461,10 @@ usuario autenticado. Todas las respuestas documentadas en Swagger con sus DTOs.
   `INVALID_CODE` (código de correo incorrecto o expirado), `PASSWORD_WEAK`,
   `REPORT_NOT_EDITABLE`, `EVIDENCE_LIMIT`, `INVALID_IMAGE`, `OWN_REPORT`
   (like o revisión a reporte propio), `OWN_COMMENT` (denunciar comentario
-  propio), `ALREADY_FLAGGED`, `CATALOG_INACTIVE`, `PLATFORM_OTHER_REQUIRED`.
+  propio), `ALREADY_FLAGGED`, `CATALOG_INACTIVE`, `PLATFORM_OTHER_REQUIRED`,
+  `INVALID_CURRENT_PASSWORD` (PATCH /me/password con `passwordActual`
+  incorrecta — 400, nunca 401, para que el cliente no lo confunda con una
+  sesión vencida y reintente solo tras refrescar el token).
 - La app iOS es **solo para usuarios** (`rol = 'usuario'`). Los admins usan el
   sitio web. Si un admin inicia sesión en la app, la app recibe `mfaRequired`
   o `mfaSetupRequired` y le muestra que use el panel web.

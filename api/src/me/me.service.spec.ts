@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment -- expect.any() está tipado como `any` a propósito por Jest */
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
+import { LockoutService } from '../auth/lockout.service';
 import { SessionService } from '../auth/session.service';
 import { CommentsService } from '../comments/comments.service';
 import { hashPassword } from '../common/utils/password-hash';
@@ -13,6 +14,7 @@ describe('MeService', () => {
   let service: MeService;
   let auditService: { log: jest.Mock };
   let sessionService: { revokeAllExceptCurrent: jest.Mock };
+  let lockoutService: { registerFailedAttempt: jest.Mock };
   let reportsService: { getMyReports: jest.Mock };
   let commentsService: { listMyComments: jest.Mock };
   let usuarioRepo: { findOne: jest.Mock; update: jest.Mock };
@@ -32,6 +34,7 @@ describe('MeService', () => {
   beforeEach(() => {
     auditService = { log: jest.fn() };
     sessionService = { revokeAllExceptCurrent: jest.fn() };
+    lockoutService = { registerFailedAttempt: jest.fn() };
     reportsService = { getMyReports: jest.fn() };
     commentsService = { listMyComments: jest.fn() };
     usuarioRepo = { findOne: jest.fn(), update: jest.fn() };
@@ -39,6 +42,7 @@ describe('MeService', () => {
     service = new MeService(
       auditService as unknown as AuditService,
       sessionService as unknown as SessionService,
+      lockoutService as unknown as LockoutService,
       reportsService as unknown as ReportsService,
       commentsService as unknown as CommentsService,
       usuarioRepo as unknown as Repository<Usuario>,
@@ -109,7 +113,7 @@ describe('MeService', () => {
       );
     });
 
-    it('rechaza si la contraseña actual es incorrecta', async () => {
+    it('rechaza con 400 INVALID_CURRENT_PASSWORD si la contraseña actual es incorrecta, audita y cuenta para el bloqueo', async () => {
       const usuario = buildUsuario({
         passwordHash: await hashPassword('ActualSegura123'),
       });
@@ -120,8 +124,19 @@ describe('MeService', () => {
           passwordActual: 'incorrecta',
           nuevaPassword: 'Xk9#mPq2vL7zT4',
         }),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
+      ).rejects.toMatchObject({
+        response: { code: 'INVALID_CURRENT_PASSWORD' },
+      });
       expect(sessionService.revokeAllExceptCurrent).not.toHaveBeenCalled();
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accion: 'password_cambio_fallo',
+          resultado: 'fallo',
+        }),
+      );
+      expect(lockoutService.registerFailedAttempt).toHaveBeenCalledWith(
+        usuario,
+      );
     });
 
     it('rechaza una nueva contraseña débil', async () => {

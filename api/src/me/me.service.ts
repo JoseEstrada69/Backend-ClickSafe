@@ -1,11 +1,12 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AuditService } from '../audit/audit.service';
+import { LockoutService } from '../auth/lockout.service';
 import { RequestMeta, SessionService } from '../auth/session.service';
 import { CommentsService } from '../comments/comments.service';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
@@ -26,6 +27,7 @@ export class MeService {
   constructor(
     private readonly auditService: AuditService,
     private readonly sessionService: SessionService,
+    private readonly lockoutService: LockoutService,
     private readonly reportsService: ReportsService,
     private readonly commentsService: CommentsService,
     @InjectRepository(Usuario)
@@ -70,7 +72,23 @@ export class MeService {
       dto.passwordActual,
     );
     if (!passwordOk) {
-      throw new UnauthorizedException('La contraseña actual no es correcta.');
+      // 400 (no 401, sección 7): un 401 aquí hace que algunos clientes lo
+      // confundan con una sesión vencida y reintenten tras refrescar el
+      // token, generando un segundo intento fallido que el usuario nunca
+      // hizo. Sigue contando para el bloqueo progresivo (5.1/5.4) y se
+      // audita, igual que un login fallido.
+      await this.auditService.log({
+        idUsuario,
+        accion: 'password_cambio_fallo',
+        resultado: 'fallo',
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      });
+      await this.lockoutService.registerFailedAttempt(usuario);
+      throw new BadRequestException({
+        message: 'La contraseña actual no es correcta.',
+        code: 'INVALID_CURRENT_PASSWORD',
+      });
     }
 
     validatePasswordStrength(dto.nuevaPassword, usuario.correo, usuario.nombre);
