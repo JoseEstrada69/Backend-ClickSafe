@@ -69,7 +69,7 @@ export class MeController {
     description: 'Contraseña cambiada; se revocan las demás sesiones.',
   })
   @ApiBadRequestResponse(
-    'La nueva contraseña es débil (PASSWORD_WEAK) o no tiene el formato esperado.',
+    'Contraseña actual incorrecta (INVALID_CURRENT_PASSWORD), nueva contraseña débil (PASSWORD_WEAK), o datos con formato inválido.',
   )
   changePassword(
     @Req() req: AuthenticatedRequest,

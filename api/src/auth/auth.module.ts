@@ -32,6 +32,6 @@ import { SessionService } from './session.service';
     LockoutService,
     MfaOrAdminSessionGuard,
   ],
-  exports: [SessionService, AuthService, MfaService],
+  exports: [SessionService, AuthService, MfaService, LockoutService],
 })
 export class AuthModule {}
