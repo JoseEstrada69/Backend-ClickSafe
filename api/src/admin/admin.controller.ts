@@ -17,6 +17,7 @@ import {
   ApiNoContentResponse,
   ApiOkResponse,
 } from '@nestjs/swagger';
+import { GenericMessageResponse } from '../auth/dto/auth-responses.dto';
 import { ClientInfo } from '../common/decorators/client-info.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import type { AuthenticatedRequest } from '../common/interfaces/jwt-payload.interface';
@@ -36,6 +37,7 @@ import { AdminUserQueryDto } from './dto/admin-user-query.dto';
 import {
   AdminCategoryResponse,
   AdminPlatformResponse,
+  AdminReportDetailResponse,
   AdminReportResponse,
   AdminStatsResponse,
   AdminUserResponse,
@@ -71,16 +73,32 @@ export class AdminController {
     return this.adminService.listReports(query);
   }
 
+  @Get('reports/:id')
+  @ApiOkResponse({
+    description:
+      'Detalle de un reporte, con autor real, evidencias firmadas y la revisión si ya la tiene.',
+    type: AdminReportDetailResponse,
+  })
+  getReportById(
+    @Param('id', ParsePositiveIntPipe) id: number,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<AdminReportDetailResponse> {
+    return this.adminService.getReportById(id, Number(req.user?.sub));
+  }
+
   @Post('reports/:id/review')
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ description: 'Reporte revisado.' })
+  @ApiOkResponse({
+    description: 'Reporte revisado.',
+    type: GenericMessageResponse,
+  })
   @ApiBadRequestResponse('El reporte ya fue revisado.', 'REPORT_NOT_EDITABLE')
   @ApiForbiddenResponse('No puedes revisar tu propio reporte.', 'OWN_REPORT')
   async reviewReport(
     @Param('id', ParsePositiveIntPipe) id: number,
     @Body() dto: ReviewReportDto,
     @Req() req: AuthenticatedRequest,
-  ) {
+  ): Promise<GenericMessageResponse> {
     await this.adminService.reviewReport(id, Number(req.user?.sub), dto);
     return { message: 'Reporte revisado correctamente.' };
   }

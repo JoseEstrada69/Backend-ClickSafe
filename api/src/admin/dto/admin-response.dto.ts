@@ -3,6 +3,7 @@ import type {
   EstadoReporte,
   MotivoDenuncia,
 } from '../../database/entities';
+import { ReportRevisionResponse } from '../../reports/dto/report-response.dto';
 
 export class AdminUserRefResponse {
   nombre!: string;
@@ -42,6 +43,12 @@ export class AdminReportResponse {
   fechaActualizacion!: string;
 }
 
+/** GET /admin/reports/:id (sección 7): detalle con revisión (si ya la tiene) y esMio (si el admin es el autor). */
+export class AdminReportDetailResponse extends AdminReportResponse {
+  revision!: ReportRevisionResponse | null;
+  esMio!: boolean;
+}
+
 export class FlaggedCommentResponse {
   id!: number;
   contenido!: string;
@@ -78,10 +85,18 @@ export class AdminStatsStateEntry {
   total!: number;
 }
 
+/** `mes` en formato "YYYY-MM", UTC (sección 1 regla 11). */
+export class AdminStatsMonthEntry {
+  mes!: string;
+  total!: number;
+}
+
 export class AdminStatsResponse {
   porPlataforma!: AdminStatsPlatformEntry[];
   porCategoria!: AdminStatsCategoryEntry[];
   porEstado!: AdminStatsStateEntry[];
+  /** Últimos 12 meses en UTC, de más antiguo a más reciente; incluye meses sin reportes con total 0. */
+  porMes!: AdminStatsMonthEntry[];
 }
 
 export class AdminPlatformResponse {
@@ -102,6 +117,8 @@ export class AuditLogEntryResponse {
   id!: string;
   fecha!: string;
   idUsuario!: number | null;
+  /** null cuando el evento no tiene usuario asociado (p. ej. login con correo inexistente). */
+  usuario!: AdminUserRefResponse | null;
   accion!: string;
   resultado!: 'exito' | 'fallo';
   recursoTipo!: string | null;

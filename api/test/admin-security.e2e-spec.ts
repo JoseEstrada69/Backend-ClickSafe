@@ -45,6 +45,7 @@ describe('Admin (e2e) — control de acceso', () => {
 
   it.each([
     ['GET', '/api/v1/admin/reports'],
+    ['GET', '/api/v1/admin/reports/1'],
     ['GET', '/api/v1/admin/users'],
     ['GET', '/api/v1/admin/stats'],
     ['GET', '/api/v1/admin/audit-log'],
