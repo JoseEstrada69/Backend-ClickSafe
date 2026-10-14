@@ -102,8 +102,9 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
 ### Datos de ejemplo (`npm run seed:demo`)
 
 Crea, contra la base de **desarrollo** (nunca contra producción: se niega a
-correr si `NODE_ENV=production`), 3 usuarios normales con correo ya
-verificado y unos 25 reportes repartidos en los 3 estados, en varias
+correr si `NODE_ENV=production`), más de 20 usuarios normales con correo ya
+verificado (uno de ellos queda suspendido, para probar el panel con un
+usuario inactivo) y unos 25 reportes repartidos en los 3 estados, en varias
 plataformas (incluida "Otra") y categorías, con fechas distribuidas en los
 últimos 12 meses, algunos anónimos, varios con evidencias (imágenes simples
 generadas con `sharp`, guardadas con el mismo `StorageService` que usa la
@@ -115,9 +116,20 @@ que el panel nunca lo interpreta como HTML) y otro con la URL
 muestra como si fuera un enlace legítimo a Mercado Libre; la API pública
 rechazaría esa URL si viniera de un reporte real, sección 4.8).
 
+También crea un reporte dedicado a moderación de comentarios (Fase 4), con
+un comentario con 3 denuncias de motivos distintos (cada una con su
+`detalle`) que llega a `oculto_auto`, uno con una sola denuncia todavía
+pendiente, uno con el contenido `<img src=x onerror=alert(1)>` y uno con una
+cadena de ~300 caracteres sin espacios (para probar el ajuste de texto del
+panel).
+
 Requiere que ya exista un admin (`npm run seed:admin` primero: las
-revisiones de ejemplo quedan a su nombre; el script nunca crea un admin
-nuevo).
+revisiones de ejemplo quedan a su nombre) y además crea un **segundo admin**
+de demo con contraseña aleatoria inutilizable (igual que `POST
+/admin/admins`), para poder probar el panel con más de un admin. A
+diferencia del resto del script, esto sí crea una cuenta con rol admin — una
+excepción deliberada solo para esta herramienta de desarrollo, nunca
+disponible por la API pública.
 
 Es **idempotente por elemento**, no "todo o nada": cada usuario se busca por
 `correo` y cada reporte por `titulo` exacto, así que correrlo varias veces
