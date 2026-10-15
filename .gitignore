@@ -22,6 +22,10 @@ coverage/
 # generadas al correr `npm run test:e2e`, nunca se deben versionar.
 /storage-test/
 
+# Respaldos de npm run db:backup (api/scripts/db-backup.ts): son datos
+# reales de desarrollo, nunca se versionan.
+/backups/
+
 # Certificados y llaves
 *.pem
 *.key
