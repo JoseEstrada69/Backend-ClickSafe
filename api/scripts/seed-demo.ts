@@ -7,6 +7,7 @@ import { AppModule } from '../src/app.module';
 import { AppConfigService } from '../src/config/app-config.service';
 import { generateStrongPassword } from '../src/common/utils/generate-strong-password';
 import { hashPassword } from '../src/common/utils/password-hash';
+import { CATALOG_NAME_PATTERN } from '../src/common/validators/catalog-name.validator';
 import { ImageProcessingService } from '../src/evidences/image-processing.service';
 import { STORAGE_SERVICE } from '../src/storage/storage.service.interface';
 import type { StorageService } from '../src/storage/storage.service.interface';
@@ -307,10 +308,25 @@ async function run(): Promise<void> {
     }
 
     // --- Catálogos ya existentes (database/clicksafe_db.sql) ---
-    const plataformas = await plataformaRepo.find({ where: { activa: true } });
+    // Solo nombres que pasan la lista blanca (IsCatalogName): un escaneo
+    // activo (OWASP ZAP) demostró que la API aceptaba cualquier texto como
+    // nombre de catálogo antes de ese validador, dejando cientos de filas
+    // de prueba activas. Sin este filtro, este seed las repartiría entre
+    // los reportes de demo igual que si fueran catálogos reales.
+    const plataformasTodas = await plataformaRepo.find({
+      where: { activa: true },
+    });
+    const plataformas = plataformasTodas.filter(
+      (p) => p.esOtra || CATALOG_NAME_PATTERN.test(p.nombre),
+    );
     const otra = plataformas.find((p) => p.esOtra);
     const normales = plataformas.filter((p) => !p.esOtra);
-    const categorias = await categoriaRepo.find({ where: { activa: true } });
+    const categoriasTodas = await categoriaRepo.find({
+      where: { activa: true },
+    });
+    const categorias = categoriasTodas.filter((c) =>
+      CATALOG_NAME_PATTERN.test(c.nombre),
+    );
     if (normales.length === 0 || !otra || categorias.length === 0) {
       throw new Error(
         'Faltan catálogos (Plataforma/Categoria_fraude). ¿Corriste database/clicksafe_db.sql?',
