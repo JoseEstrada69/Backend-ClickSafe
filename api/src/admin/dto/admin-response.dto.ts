@@ -1,3 +1,4 @@
+import type { AuditAction } from '../../audit/audit-action.type';
 import type {
   EstadoComentario,
   EstadoReporte,
@@ -129,7 +130,7 @@ export class AuditLogEntryResponse {
   idUsuario!: number | null;
   /** null cuando el evento no tiene usuario asociado (p. ej. login con correo inexistente). */
   usuario!: AdminUserRefResponse | null;
-  accion!: string;
+  accion!: AuditAction;
   resultado!: 'exito' | 'fallo';
   recursoTipo!: string | null;
   recursoId!: number | null;

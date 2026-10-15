@@ -216,6 +216,10 @@ export class AdminController {
     type: AdminPlatformResponse,
   })
   @ApiBadRequestResponse('Datos con formato inválido.')
+  @ApiConflictResponse(
+    'Ya existe una plataforma con ese nombre.',
+    'CATALOG_NAME_TAKEN',
+  )
   createPlatform(
     @Body() dto: CreatePlatformDto,
     @Req() req: AuthenticatedRequest,
@@ -230,6 +234,10 @@ export class AdminController {
   })
   @ApiBadRequestResponse(
     'No puedes desactivar la plataforma "Otra", o datos con formato inválido.',
+  )
+  @ApiConflictResponse(
+    'Ya existe una plataforma con ese nombre.',
+    'CATALOG_NAME_TAKEN',
   )
   updatePlatform(
     @Param('id', ParsePositiveIntPipe) id: number,
@@ -255,6 +263,10 @@ export class AdminController {
     type: AdminCategoryResponse,
   })
   @ApiBadRequestResponse('Datos con formato inválido.')
+  @ApiConflictResponse(
+    'Ya existe una categoría con ese nombre.',
+    'CATALOG_NAME_TAKEN',
+  )
   createCategory(
     @Body() dto: CreateCategoryDto,
     @Req() req: AuthenticatedRequest,
@@ -268,6 +280,10 @@ export class AdminController {
     type: AdminCategoryResponse,
   })
   @ApiBadRequestResponse('Datos con formato inválido.')
+  @ApiConflictResponse(
+    'Ya existe una categoría con ese nombre.',
+    'CATALOG_NAME_TAKEN',
+  )
   updateCategory(
     @Param('id', ParsePositiveIntPipe) id: number,
     @Body() dto: UpdateCategoryDto,

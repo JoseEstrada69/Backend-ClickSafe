@@ -1,6 +1,6 @@
 import { IsString, Length } from 'class-validator';
 import { Trim } from '../../common/decorators/trim.decorator';
-import { IsNoControlChars } from '../../common/validators/no-control-chars.validator';
+import { IsCatalogName } from '../../common/validators/catalog-name.validator';
 
 /**
  * POST /admin/platforms (sección 1 regla 10, sección 7): `esOtra` nunca se
@@ -11,7 +11,7 @@ import { IsNoControlChars } from '../../common/validators/no-control-chars.valid
 export class CreatePlatformDto {
   @Trim()
   @IsString()
-  @Length(1, 100)
-  @IsNoControlChars()
+  @Length(2, 100)
+  @IsCatalogName()
   nombre!: string;
 }

@@ -3765,6 +3765,22 @@
               }
             }
           },
+          "409": {
+            "description": "Ya existe una plataforma con ese nombre.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "error": "Conflict",
+                    "message": "Ya existe una plataforma con ese nombre.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CATALOG_NAME_TAKEN"
+                  }
+                }
+              }
+            }
+          },
           "429": {
             "description": "Se excedió el límite de peticiones para esta ruta.",
             "content": {
@@ -3865,6 +3881,22 @@
                     "error": "Forbidden",
                     "message": "Requiere rol admin con 2FA completado.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe una plataforma con ese nombre.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "error": "Conflict",
+                    "message": "Ya existe una plataforma con ese nombre.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CATALOG_NAME_TAKEN"
                   }
                 }
               }
@@ -4038,6 +4070,22 @@
               }
             }
           },
+          "409": {
+            "description": "Ya existe una categoría con ese nombre.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "error": "Conflict",
+                    "message": "Ya existe una categoría con ese nombre.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CATALOG_NAME_TAKEN"
+                  }
+                }
+              }
+            }
+          },
           "429": {
             "description": "Se excedió el límite de peticiones para esta ruta.",
             "content": {
@@ -4138,6 +4186,22 @@
                     "error": "Forbidden",
                     "message": "Requiere rol admin con 2FA completado.",
                     "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Ya existe una categoría con ese nombre.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "error": "Conflict",
+                    "message": "Ya existe una categoría con ese nombre.",
+                    "requestId": "5b1e2c2a-1234-4a5b-8c9d-0e1f2a3b4c5d",
+                    "code": "CATALOG_NAME_TAKEN"
                   }
                 }
               }
@@ -4270,8 +4334,27 @@
             "required": false,
             "in": "query",
             "schema": {
-              "maxLength": 60,
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "login",
+                "cuenta_bloqueada",
+                "logout",
+                "refresh_reuso_detectado",
+                "registro",
+                "correo_verificado",
+                "password_recuperacion_solicitada",
+                "password_cambiada",
+                "2fa_activado",
+                "2fa_fallo",
+                "reporte_revisado",
+                "comentario_moderado",
+                "usuario_suspendido",
+                "usuario_reactivado",
+                "admin_creado",
+                "catalogo_modificado",
+                "evidencia_eliminada",
+                "password_cambio_fallo"
+              ]
             }
           },
           {
@@ -5662,7 +5745,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           }
         },
@@ -5675,7 +5758,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           },
           "activa": {
@@ -5712,7 +5795,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           },
           "descripcion": {
@@ -5729,7 +5812,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           },
           "descripcion": {
@@ -5866,7 +5949,27 @@
             ]
           },
           "accion": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "correo_verificado",
+              "login",
+              "cuenta_bloqueada",
+              "logout",
+              "refresh_reuso_detectado",
+              "registro",
+              "password_recuperacion_solicitada",
+              "password_cambiada",
+              "2fa_activado",
+              "2fa_fallo",
+              "reporte_revisado",
+              "comentario_moderado",
+              "usuario_suspendido",
+              "usuario_reactivado",
+              "admin_creado",
+              "catalogo_modificado",
+              "evidencia_eliminada",
+              "password_cambio_fallo"
+            ]
           },
           "resultado": {
             "type": "string",
