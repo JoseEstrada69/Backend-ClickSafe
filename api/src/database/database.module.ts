@@ -24,6 +24,10 @@ import { MysqlSessionTimezoneInitializer } from './mysql-session-timezone.initia
         migrationsRun: false,
         // Todas las fechas en UTC (2).
         timezone: 'Z',
+        // Sin fijarlo, mysql2 usa su propio valor por defecto (10) sin que
+        // quede documentado en el proyecto. DB_POOL_SIZE (zod, default 20)
+        // lo deja explícito y ajustable sin tocar código (docs/seguridad.md).
+        poolSize: appConfig.db.poolSize,
       }),
     }),
     // Usuario y Sesion son transversales: AuditService, el seed del admin

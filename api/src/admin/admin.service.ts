@@ -603,6 +603,7 @@ export class AdminService {
   async createPlatform(
     dto: CreatePlatformDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminPlatformResponse> {
     let saved: Plataforma;
     try {
@@ -629,6 +630,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Plataforma',
       recursoId: saved.idPlataforma,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'crear' },
     });
 
@@ -640,6 +643,7 @@ export class AdminService {
     idPlataforma: number,
     dto: UpdatePlatformDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminPlatformResponse> {
     const plataforma = await this.plataformaRepo.findOne({
       where: { idPlataforma },
@@ -675,6 +679,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Plataforma',
       recursoId: idPlataforma,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'editar' },
     });
 
@@ -694,6 +700,7 @@ export class AdminService {
   async createCategory(
     dto: CreateCategoryDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminCategoryResponse> {
     let saved: CategoriaFraude;
     try {
@@ -720,6 +727,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Categoria_fraude',
       recursoId: saved.idCategoria,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'crear' },
     });
 
@@ -730,6 +739,7 @@ export class AdminService {
     idCategoria: number,
     dto: UpdateCategoryDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminCategoryResponse> {
     const categoria = await this.categoriaRepo.findOne({
       where: { idCategoria },
@@ -761,6 +771,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Categoria_fraude',
       recursoId: idCategoria,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'editar' },
     });
 

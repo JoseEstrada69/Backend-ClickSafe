@@ -223,8 +223,9 @@ export class AdminController {
   createPlatform(
     @Body() dto: CreatePlatformDto,
     @Req() req: AuthenticatedRequest,
+    @ClientInfo() client: RequestMeta,
   ): Promise<AdminPlatformResponse> {
-    return this.adminService.createPlatform(dto, Number(req.user?.sub));
+    return this.adminService.createPlatform(dto, Number(req.user?.sub), client);
   }
 
   @Patch('platforms/:id')
@@ -243,8 +244,14 @@ export class AdminController {
     @Param('id', ParsePositiveIntPipe) id: number,
     @Body() dto: UpdatePlatformDto,
     @Req() req: AuthenticatedRequest,
+    @ClientInfo() client: RequestMeta,
   ): Promise<AdminPlatformResponse> {
-    return this.adminService.updatePlatform(id, dto, Number(req.user?.sub));
+    return this.adminService.updatePlatform(
+      id,
+      dto,
+      Number(req.user?.sub),
+      client,
+    );
   }
 
   @Get('categories')
@@ -270,8 +277,9 @@ export class AdminController {
   createCategory(
     @Body() dto: CreateCategoryDto,
     @Req() req: AuthenticatedRequest,
+    @ClientInfo() client: RequestMeta,
   ): Promise<AdminCategoryResponse> {
-    return this.adminService.createCategory(dto, Number(req.user?.sub));
+    return this.adminService.createCategory(dto, Number(req.user?.sub), client);
   }
 
   @Patch('categories/:id')
@@ -288,8 +296,14 @@ export class AdminController {
     @Param('id', ParsePositiveIntPipe) id: number,
     @Body() dto: UpdateCategoryDto,
     @Req() req: AuthenticatedRequest,
+    @ClientInfo() client: RequestMeta,
   ): Promise<AdminCategoryResponse> {
-    return this.adminService.updateCategory(id, dto, Number(req.user?.sub));
+    return this.adminService.updateCategory(
+      id,
+      dto,
+      Number(req.user?.sub),
+      client,
+    );
   }
 
   @Get('stats')
