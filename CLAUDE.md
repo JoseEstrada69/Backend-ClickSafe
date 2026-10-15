@@ -465,14 +465,16 @@ usuario autenticado. Todas las respuestas documentadas en Swagger con sus DTOs.
   `INVALID_CURRENT_PASSWORD` (PATCH /me/password con `passwordActual`
   incorrecta — 400, nunca 401, para que el cliente no lo confunda con una
   sesión vencida y reintente solo tras refrescar el token).
-  Los siguientes 5 son **solo del panel de admin** (el sitio web, no la app
+  Los siguientes 6 son **solo del panel de admin** (el sitio web, no la app
   iOS — nadie ahí necesita traducirlos): `INVALID_TOTP` (POST /admin/admins
   con el código TOTP de reautenticación incorrecto — 400, mismo motivo que
   INVALID_CURRENT_PASSWORD, nunca 401), `OWN_STATUS` (PATCH
   /admin/users/:id/status sobre sí mismo), `LAST_ACTIVE_ADMIN` (…dejaría el
   sistema sin admins activos), `EMAIL_TAKEN` (POST /admin/admins con correo
   ya registrado), `COMMENT_NOT_FLAGGED` (PATCH /admin/comments/:id sobre un
-  comentario que ya no está en moderación).
+  comentario que ya no está en moderación), `CATALOG_NAME_TAKEN` (POST o
+  PATCH de /admin/platforms o /admin/categories con un nombre ya usado por
+  otra plataforma/categoría — 409).
 - La app iOS es **solo para usuarios** (`rol = 'usuario'`). Los admins usan el
   sitio web. Si un admin inicia sesión en la app, la app recibe `mfaRequired`
   o `mfaSetupRequired` y le muestra que use el panel web.

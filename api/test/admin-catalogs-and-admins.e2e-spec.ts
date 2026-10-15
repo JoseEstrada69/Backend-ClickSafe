@@ -207,7 +207,7 @@ describe('Admin (e2e) — admins y catálogos', () => {
       expect(response.status).toBe(400);
     });
 
-    it('crear dos plataformas con el mismo nombre responde 409', async () => {
+    it('crear dos plataformas con el mismo nombre responde 409 CATALOG_NAME_TAKEN', async () => {
       const nombre = `Duplicada E2E ${Date.now()}`;
       const first = await request(app.getHttpServer() as App)
         .post('/api/v1/admin/platforms')
@@ -220,6 +220,32 @@ describe('Admin (e2e) — admins y catálogos', () => {
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({ nombre });
       expect(second.status).toBe(409);
+      expect((second.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
+    });
+
+    it('renombrar una plataforma al nombre de otra responde 409 CATALOG_NAME_TAKEN', async () => {
+      const nombreExistente = `Plataforma Existente E2E ${Date.now()}`;
+      await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/platforms')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+
+      const createResponse = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/platforms')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: `Plataforma A Renombrar E2E ${Date.now()}` });
+      const { id } = createResponse.body as { id: number };
+
+      const renameResponse = await request(app.getHttpServer() as App)
+        .patch(`/api/v1/admin/platforms/${id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+      expect(renameResponse.status).toBe(409);
+      expect((renameResponse.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
     });
 
     it('nunca se puede desactivar la plataforma "Otra"', async () => {
@@ -301,7 +327,7 @@ describe('Admin (e2e) — admins y catálogos', () => {
       expect(body.activa).toBe(true);
     });
 
-    it('crear dos categorías con el mismo nombre responde 409', async () => {
+    it('crear dos categorías con el mismo nombre responde 409 CATALOG_NAME_TAKEN', async () => {
       const nombre = `Categoría Duplicada E2E ${Date.now()}`;
       const first = await request(app.getHttpServer() as App)
         .post('/api/v1/admin/categories')
@@ -314,6 +340,32 @@ describe('Admin (e2e) — admins y catálogos', () => {
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({ nombre });
       expect(second.status).toBe(409);
+      expect((second.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
+    });
+
+    it('renombrar una categoría al nombre de otra responde 409 CATALOG_NAME_TAKEN', async () => {
+      const nombreExistente = `Categoría Existente E2E ${Date.now()}`;
+      await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/categories')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+
+      const createResponse = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/categories')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: `Categoría A Renombrar E2E ${Date.now()}` });
+      const { id } = createResponse.body as { id: number };
+
+      const renameResponse = await request(app.getHttpServer() as App)
+        .patch(`/api/v1/admin/categories/${id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+      expect(renameResponse.status).toBe(409);
+      expect((renameResponse.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
     });
 
     it('PATCH puede desactivar y reactivar una categoría', async () => {

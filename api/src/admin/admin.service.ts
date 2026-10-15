@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
+import type { AuditAction } from '../audit/audit-action.type';
 import { AuditService } from '../audit/audit.service';
 import { AuthService } from '../auth/auth.service';
 import { MfaService } from '../auth/mfa.service';
@@ -614,7 +615,10 @@ export class AdminService {
       );
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        throw new ConflictException('Ya existe una plataforma con ese nombre.');
+        throw new ConflictException({
+          message: 'Ya existe una plataforma con ese nombre.',
+          code: 'CATALOG_NAME_TAKEN',
+        });
       }
       throw error;
     }
@@ -657,7 +661,10 @@ export class AdminService {
       await this.plataformaRepo.update({ idPlataforma }, patch);
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        throw new ConflictException('Ya existe una plataforma con ese nombre.');
+        throw new ConflictException({
+          message: 'Ya existe una plataforma con ese nombre.',
+          code: 'CATALOG_NAME_TAKEN',
+        });
       }
       throw error;
     }
@@ -699,7 +706,10 @@ export class AdminService {
       );
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        throw new ConflictException('Ya existe una categoría con ese nombre.');
+        throw new ConflictException({
+          message: 'Ya existe una categoría con ese nombre.',
+          code: 'CATALOG_NAME_TAKEN',
+        });
       }
       throw error;
     }
@@ -737,7 +747,10 @@ export class AdminService {
       await this.categoriaRepo.update({ idCategoria }, patch);
     } catch (error) {
       if (isDuplicateKeyError(error)) {
-        throw new ConflictException('Ya existe una categoría con ese nombre.');
+        throw new ConflictException({
+          message: 'Ya existe una categoría con ese nombre.',
+          code: 'CATALOG_NAME_TAKEN',
+        });
       }
       throw error;
     }
@@ -896,7 +909,10 @@ export class AdminService {
         usuario: row.usuario
           ? { nombre: row.usuario.nombre, correo: row.usuario.correo }
           : null,
-        accion: row.accion,
+        // El valor en BD siempre viene de AuditService.log() (lista cerrada,
+        // audit-action.type.ts); la columna es varchar(60) genérica, por eso
+        // la entidad la tipa como string.
+        accion: row.accion as AuditAction,
         resultado: row.resultado,
         recursoTipo: row.recursoTipo,
         recursoId: row.recursoId,
