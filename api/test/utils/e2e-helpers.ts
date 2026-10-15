@@ -222,9 +222,17 @@ export async function createVerifiedAdmin(
     mfaToken: string;
   };
 
+  // offset 1 (relativo al momento en que se generó el código) solo es
+  // válido mientras no pase más de un paso de 30s de tiempo REAL antes de
+  // que el servidor lo valide -- con la suite ya grande, la carga de CPU
+  // entre llamadas puede hacer que esa ventana se pase, y el servidor
+  // rechaza el código como "fuera de tolerancia" (401), no como reusado.
+  // Resetear el contador y usar offset 0 (el "ahora" real en el momento de
+  // generarlo) evita depender de ese margen.
+  await usuarioRepo.update(usuario.idUsuario, { totpUltimoContador: null });
   const verifyResponse = await request(app.getHttpServer() as App)
     .post('/api/v1/auth/2fa/verify')
-    .send({ mfaToken: verifyToken, codigo: generateTotpCode(secret, 1) });
+    .send({ mfaToken: verifyToken, codigo: generateTotpCode(secret, 0) });
   if (verifyResponse.status !== 200) {
     throw new Error(
       `2fa/verify falló: ${verifyResponse.status} ${JSON.stringify(verifyResponse.body)}`,

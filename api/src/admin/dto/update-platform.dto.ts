@@ -1,6 +1,6 @@
 import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
 import { Trim } from '../../common/decorators/trim.decorator';
-import { IsNoControlChars } from '../../common/validators/no-control-chars.validator';
+import { IsCatalogName } from '../../common/validators/catalog-name.validator';
 
 /**
  * PATCH /admin/platforms/:id: `esOtra` no se declara aquí a propósito (no
@@ -11,8 +11,8 @@ export class UpdatePlatformDto {
   @IsOptional()
   @Trim()
   @IsString()
-  @Length(1, 100)
-  @IsNoControlChars()
+  @Length(2, 100)
+  @IsCatalogName()
   nombre?: string;
 
   @IsOptional()

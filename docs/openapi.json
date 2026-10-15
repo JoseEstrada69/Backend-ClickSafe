@@ -5745,7 +5745,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           }
         },
@@ -5758,7 +5758,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           },
           "activa": {
@@ -5795,7 +5795,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           },
           "descripcion": {
@@ -5812,7 +5812,7 @@
         "properties": {
           "nombre": {
             "type": "string",
-            "minLength": 1,
+            "minLength": 2,
             "maxLength": 100
           },
           "descripcion": {
