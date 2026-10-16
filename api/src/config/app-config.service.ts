@@ -22,6 +22,11 @@ export class AppConfigService {
     return this.configService.get('PORT', { infer: true });
   }
 
+  /** Sin fijar en el .env, `undefined` -- main.ts aplica el valor por defecto según el entorno. */
+  get host(): string | undefined {
+    return this.configService.get('HOST', { infer: true });
+  }
+
   get corsOrigins(): string[] {
     return this.configService.get('CORS_ORIGINS', { infer: true });
   }

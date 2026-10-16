@@ -16,6 +16,14 @@ const baseEnvSchema = z.object({
     .default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
+  // Interfaz donde escucha la API (4.1). Opcional a propósito: sin fijarla,
+  // se conserva el comportamiento de siempre (127.0.0.1 en producción,
+  // 0.0.0.0 en desarrollo) -- ver main.ts. Solo hace falta fijarla cuando la
+  // topología real no coincide con esa suposición (p. ej. un laboratorio sin
+  // Nginx, donde la API debe exponerse directo a la red aunque
+  // NODE_ENV=production). Validada como IPv4 o IPv6 real, nunca un hostname.
+  HOST: z.union([z.ipv4(), z.ipv6()]).optional(),
+
   // CORS deshabilitado por defecto (4.1): solo se habilita si hay orígenes explícitos.
   CORS_ORIGINS: z
     .string()

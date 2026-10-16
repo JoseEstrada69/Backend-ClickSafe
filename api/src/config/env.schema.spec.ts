@@ -31,6 +31,28 @@ describe('validateEnv', () => {
     expect(result.CORS_ORIGINS).toEqual(['https://a.com', 'https://b.com']);
   });
 
+  it('HOST queda undefined si no se fija (main.ts aplica el valor por defecto)', () => {
+    const result = validateEnv(validConfig);
+
+    expect(result.HOST).toBeUndefined();
+  });
+
+  it('acepta HOST como IPv4 o IPv6 real', () => {
+    expect(validateEnv({ ...validConfig, HOST: '0.0.0.0' }).HOST).toBe(
+      '0.0.0.0',
+    );
+    expect(validateEnv({ ...validConfig, HOST: '192.168.20.10' }).HOST).toBe(
+      '192.168.20.10',
+    );
+    expect(validateEnv({ ...validConfig, HOST: '::1' }).HOST).toBe('::1');
+  });
+
+  it('rechaza HOST que no sea una IP real (nunca un nombre de host)', () => {
+    expect(() => validateEnv({ ...validConfig, HOST: 'localhost' })).toThrow(
+      /HOST/,
+    );
+  });
+
   it('rechaza el arranque si falta JWT_ACCESS_SECRET (no expone valores en el mensaje)', () => {
     expect(() => validateEnv({})).toThrow(/JWT_ACCESS_SECRET/);
   });
