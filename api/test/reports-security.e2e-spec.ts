@@ -176,6 +176,50 @@ describe('Reports (e2e) — seguridad', () => {
     expect((response.body as { code?: string }).code).toBe('INVALID_IMAGE');
   });
 
+  /**
+   * Hallazgo de CodeQL ("Type confusion through parameter tampering",
+   * reports.service.ts): `evidencias` como campo de texto (no un archivo
+   * adjunto) nunca debe poder confundirse con un arreglo de archivos.
+   * `assertValidUploadedFiles` rechaza con 400 cualquier valor que no sea
+   * de verdad un arreglo de objetos con un Buffer real, antes de usar
+   * `.length`/`.map()` -- el mismo campo mandado como string en vez de
+   * archivo adjunto no puede evadir el límite de evidencias ni tronar el
+   * servidor con un error no controlado.
+   */
+  it('"evidencias" como texto (no como archivo) responde 400, nunca 500 ni evade el límite', async () => {
+    const usuarioRepo = usuarioRepoFrom(app);
+    const user = await createVerifiedUser(app, usuarioRepo);
+
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/reports')
+      .set('Authorization', `Bearer ${user.accessToken}`)
+      .field('titulo', 'Reporte con evidencias como texto')
+      .field(
+        'descripcion',
+        'Descripción de prueba con más de veinte caracteres de longitud.',
+      )
+      .field('urlPublicacion', 'https://tienda-fraude.example.com/producto')
+      .field('plataformaId', String(platformId))
+      .field('categoriaId', String(categoryId))
+      .field('anonimo', 'false')
+      .field('evidencias', 'no-soy-un-arreglo-de-archivos');
+
+    expect(response.status).toBe(400);
+  });
+
+  it('"evidencias" como texto en POST /reports/:id/evidences responde 400, nunca 500', async () => {
+    const usuarioRepo = usuarioRepoFrom(app);
+    const owner = await createVerifiedUser(app, usuarioRepo);
+    const report = await createReport(owner.accessToken);
+
+    const response = await request(app.getHttpServer())
+      .post(`/api/v1/reports/${report.id}/evidences`)
+      .set('Authorization', `Bearer ${owner.accessToken}`)
+      .field('evidencias', 'no-soy-un-arreglo-de-archivos');
+
+    expect(response.status).toBe(400);
+  });
+
   it('un campo extra en el body (estado) responde 400 (mass assignment)', async () => {
     const usuarioRepo = usuarioRepoFrom(app);
     const user = await createVerifiedUser(app, usuarioRepo);
