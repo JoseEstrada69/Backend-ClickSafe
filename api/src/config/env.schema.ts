@@ -133,6 +133,16 @@ const baseEnvSchema = z.object({
   // la API arranque sin ellos (se validan al correr el script, no aquí).
   SEED_ADMIN_NOMBRE: z.string().min(1).optional(),
   SEED_ADMIN_CORREO: z.string().email().optional(),
+
+  // Usado solo por scripts/seed-demo.ts. Por defecto, ese script se niega a
+  // correr si NODE_ENV=production -- la protección real es no sembrar datos
+  // de prueba sobre un despliegue de producción de verdad. Pero un
+  // laboratorio sin Nginx (ver .env.lab.example) también usa
+  // NODE_ENV=production a propósito (para que HOST/SWAGGER_ENABLED/etc. se
+  // comporten como producción), así que ahí sí hace falta poder sembrar
+  // datos de demo. ALLOW_DEMO_SEED=true es ese permiso explícito y aparte:
+  // nunca se activa "por accidente" solo por estar en NODE_ENV=production.
+  ALLOW_DEMO_SEED: booleanFromEnv('false'),
 });
 
 /**

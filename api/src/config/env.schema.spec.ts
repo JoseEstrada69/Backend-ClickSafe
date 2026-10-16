@@ -20,6 +20,19 @@ describe('validateEnv', () => {
     expect(result.TRUST_PROXY).toBe(false);
     expect(result.SWAGGER_ENABLED).toBe(false);
     expect(result.THROTTLE_LIMIT).toBe(100);
+    expect(result.ALLOW_DEMO_SEED).toBe(false);
+  });
+
+  it('ALLOW_DEMO_SEED solo se activa con el valor exacto "true"', () => {
+    expect(
+      validateEnv({ ...validConfig, ALLOW_DEMO_SEED: 'true' }).ALLOW_DEMO_SEED,
+    ).toBe(true);
+    expect(
+      validateEnv({ ...validConfig, ALLOW_DEMO_SEED: 'false' }).ALLOW_DEMO_SEED,
+    ).toBe(false);
+    expect(() =>
+      validateEnv({ ...validConfig, ALLOW_DEMO_SEED: 'yes' }),
+    ).toThrow(/ALLOW_DEMO_SEED/);
   });
 
   it('separa y limpia CORS_ORIGINS por comas', () => {

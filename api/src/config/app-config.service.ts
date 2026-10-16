@@ -152,4 +152,9 @@ export class AppConfigService {
       correo: this.configService.get('SEED_ADMIN_CORREO', { infer: true }),
     };
   }
+
+  /** Permiso explícito para que scripts/seed-demo.ts corra con NODE_ENV=production (un laboratorio sin Nginx). */
+  get allowDemoSeed(): boolean {
+    return this.configService.get('ALLOW_DEMO_SEED', { infer: true });
+  }
 }
