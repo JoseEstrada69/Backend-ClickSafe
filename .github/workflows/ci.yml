@@ -1,8 +1,9 @@
 name: CI
 
-# Lint + test + build en cada PR hacia main (sección 9/Fase 7 de CLAUDE.md).
-# No corre test:e2e aquí: necesita una base MySQL real (clicksafe_test) que
-# este workflow no monta; e2e sigue corriendo en local antes de cada PR.
+# Typecheck + lint + test + build + audit de dependencias en cada PR hacia
+# main (sección 9/Fase 7 de CLAUDE.md). No corre test:e2e aquí: necesita una
+# base MySQL real (clicksafe_test) que este workflow no monta; e2e sigue
+# corriendo en local antes de cada PR.
 on:
   pull_request:
     branches: ["main"]
@@ -30,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Typecheck
+        run: npm run typecheck
+
       - name: Lint
         run: npm run lint
 
@@ -38,3 +42,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Audit de dependencias (solo severidad alta/crítica)
+        run: npm audit --audit-level=high

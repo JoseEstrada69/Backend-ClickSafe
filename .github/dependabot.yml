@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # Dependencias de npm (api/package.json). Agrupadas y semanales para no
+  # inundar el repo de PRs individuales por cada paquete.
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+      development-dependencies:
+        dependency-type: "development"
+
+  # Las propias GitHub Actions usadas en los workflows (sección 9/Fase 7).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

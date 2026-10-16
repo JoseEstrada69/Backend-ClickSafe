@@ -5,9 +5,20 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
 *Integración de seguridad informática en redes y sistemas de software*
 (Tec de Monterrey), en colaboración con Red por la Ciberseguridad.
 
-> Este README es una versión inicial. La guía completa (seed del admin, cómo
-> correr las pruebas de seguridad, etc.) se agrega en la Fase 7. El contexto
-> completo del proyecto está en [CLAUDE.md](CLAUDE.md).
+> El contexto completo del proyecto (reglas de negocio, decisiones técnicas,
+> fases de trabajo) está en [CLAUDE.md](CLAUDE.md).
+
+## Documentación
+
+- [`docs/openapi.json`](docs/openapi.json) — contrato completo de la API
+  (se regenera con `npm run openapi:export` dentro de `api/`, sin levantar
+  el servidor HTTP). Con `SWAGGER_ENABLED=true` también queda interactivo en
+  `/api/docs`.
+- [`docs/seguridad.md`](docs/seguridad.md) — tabla de trazabilidad: cada
+  control de seguridad implementado, el ataque concreto que previene, el
+  requisito de OWASP ASVS 5.0 que cubre, y el archivo donde vive.
+- [`docs/despliegue.md`](docs/despliegue.md) — cómo desplegar el backend en
+  el laboratorio de dos PCs (Nginx, TLS propio, systemd).
 
 ## Estructura del repositorio
 
@@ -237,11 +248,26 @@ prueba en `clicksafe_db`, y nunca pueden borrar algo que sí te importa.
    `api/.env.test` exista y apunte a `clicksafe_test`; si no, falla de
    inmediato con un mensaje claro, sin intentar conectarse a ninguna base.
 
+## Integración continua
+
+En cada pull request hacia `main`, GitHub Actions
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) corre, dentro de
+`api/`: `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run
+build` y `npm audit --audit-level=high`. El análisis estático (CodeQL) corre
+por separado, vía el *default setup* de GitHub (no un workflow propio: ya
+viene activado a nivel del repositorio, así que agregar uno duplicaría el
+análisis). [`.github/dependabot.yml`](.github/dependabot.yml) mantiene al
+día las dependencias de npm y de las propias GitHub Actions.
+
+Las pruebas e2e (`npm run test:e2e`) necesitan una base MySQL real
+(`clicksafe_test`) que este workflow no monta, así que siguen corriendo en
+local antes de cada PR (ver la sección de arriba).
+
 ## Estado del proyecto
 
 En desarrollo por fases (ver sección 9 de `CLAUDE.md`). Completadas: Fases
-0-6 (base, seguridad, datos, auth, catálogos/reportes/evidencias/likes,
-comentarios/denuncias/notificaciones, admin). Alcance reducido en las
-Fases 4-6 por la fecha de entrega — ver la nota al inicio de la sección 7
-de `CLAUDE.md`. Falta la **Fase 7 — Calidad y entrega** (CI, CodeQL ya
-agregado, `dependabot.yml`, más pruebas).
+0-7 (base, seguridad, datos, auth, catálogos/reportes/evidencias/likes,
+comentarios/denuncias/notificaciones, admin, calidad y entrega). Alcance
+reducido en las Fases 4-6 por la fecha de entrega original — ver la nota al
+inicio de la sección 7 de `CLAUDE.md` (varios de esos puntos pospuestos ya
+se implementaron después, en ramas posteriores).
