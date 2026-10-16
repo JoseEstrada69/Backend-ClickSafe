@@ -478,8 +478,12 @@ INSERT INTO Categoria_fraude (nombre, descripcion) VALUES
 --  - No puede otorgar permisos (sin GRANT OPTION).
 --  - En Bitacora_auditoria solo puede leer e insertar (append-only).
 -- Ejecutar por separado, reemplazando la contraseña por una generada
--- (p. ej. `openssl rand -base64 32`) y el host por la subred donde vivirá
--- la API en su topología. NO subir la contraseña real a GitHub.
+-- (p. ej. `openssl rand -base64 32`) y el host por la subred (o, mejor
+-- todavía, la IP exacta de la máquina donde corre la API -- más
+-- restrictivo, y es el host real con el que MySQL ve llegar esa conexión;
+-- p. ej. 'clicksafe_api'@'192.168.20.10' en vez de 'clicksafe_api'@'192.168.20.%'
+-- si la API siempre corre en esa IP fija) donde vivirá la API en su
+-- topología. NO subir la contraseña real a GitHub.
 -- =====================================================================
 -- CREATE USER 'clicksafe_api'@'10.0.20.%' IDENTIFIED BY 'REEMPLAZAR_POR_CONTRASEÑA_GENERADA';
 --

@@ -22,6 +22,11 @@ export class AppConfigService {
     return this.configService.get('PORT', { infer: true });
   }
 
+  /** Sin fijar en el .env, `undefined` -- main.ts aplica el valor por defecto según el entorno. */
+  get host(): string | undefined {
+    return this.configService.get('HOST', { infer: true });
+  }
+
   get corsOrigins(): string[] {
     return this.configService.get('CORS_ORIGINS', { infer: true });
   }
@@ -146,5 +151,10 @@ export class AppConfigService {
       nombre: this.configService.get('SEED_ADMIN_NOMBRE', { infer: true }),
       correo: this.configService.get('SEED_ADMIN_CORREO', { infer: true }),
     };
+  }
+
+  /** Permiso explícito para que scripts/seed-demo.ts corra con NODE_ENV=production (un laboratorio sin Nginx). */
+  get allowDemoSeed(): boolean {
+    return this.configService.get('ALLOW_DEMO_SEED', { infer: true });
   }
 }

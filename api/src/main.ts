@@ -21,11 +21,16 @@ async function bootstrap(): Promise<void> {
 
   app.enableShutdownHooks();
 
-  // En producción, la API SOLO escucha en localhost: Nginx (en la misma
-  // máquina) es el único punto de entrada con TLS, nunca se expone la API
-  // directo a la red (docs/despliegue.md). En desarrollo se deja en todas
-  // las interfaces para poder probar desde el simulador/otro dispositivo.
-  const host = appConfig.isProduction ? '127.0.0.1' : '0.0.0.0';
+  // En producción, por defecto la API SOLO escucha en localhost: Nginx (en
+  // la misma máquina) es el único punto de entrada con TLS, nunca se expone
+  // la API directo a la red (docs/despliegue.md) -- así, aunque alguien
+  // rompiera la configuración de Nginx, la API seguiría sin ser alcanzable
+  // directo desde fuera de esa máquina. En desarrollo se deja en todas las
+  // interfaces para poder probar desde el simulador/otro dispositivo.
+  // HOST (opcional) permite anular ese valor por defecto cuando la topología
+  // real no tiene Nginx delante (p. ej. un laboratorio): ver .env.example.
+  const host =
+    appConfig.host ?? (appConfig.isProduction ? '127.0.0.1' : '0.0.0.0');
   await app.listen(appConfig.port, host);
 }
 

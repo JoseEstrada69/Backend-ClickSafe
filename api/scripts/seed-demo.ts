@@ -42,8 +42,12 @@ const TOTAL_USUARIOS_NORMALES = 23; // > 20 en total (sección 7, panel de admin
  * se creó y qué ya existía. Corrarlo varias veces es seguro: la segunda vez
  * no debería crear nada nuevo.
  *
- * Se niega a correr si NODE_ENV=production (esto es solo para
- * desarrollo/laboratorio). Usa el admin que ya exista de `npm run
+ * Se niega a correr si NODE_ENV=production, salvo que ALLOW_DEMO_SEED=true
+ * (p. ej. un laboratorio sin Nginx que por lo demás necesita
+ * NODE_ENV=production para que HOST/SWAGGER_ENABLED/etc. se comporten como
+ * producción, ver .env.lab.example) -- la protección real es no sembrar
+ * datos de prueba sobre un despliegue de producción de verdad, nunca el
+ * valor de NODE_ENV por sí solo. Usa el admin que ya exista de `npm run
  * seed:admin` para autoría de las revisiones de ejemplo, y además crea un
  * SEGUNDO admin de demo (contraseña aleatoria inutilizable, igual que
  * POST /admin/admins) para poder probar el panel con más de un admin --
@@ -162,9 +166,9 @@ async function run(): Promise<void> {
 
   try {
     const appConfig = app.get(AppConfigService);
-    if (appConfig.isProduction) {
+    if (appConfig.isProduction && !appConfig.allowDemoSeed) {
       console.error(
-        'NODE_ENV=production: seed:demo es solo para desarrollo/laboratorio. No se creó nada.',
+        'NODE_ENV=production sin ALLOW_DEMO_SEED=true: seed:demo no corre aquí. No se creó nada.',
       );
       process.exitCode = 1;
       return;
