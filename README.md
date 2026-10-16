@@ -283,10 +283,14 @@ local antes de cada PR (ver la sección de arriba).
    `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
    y pon la IP real de la PC de base de datos, la contraseña de
    `clicksafe_api` y la ruta de `STORAGE_DIR` (créala si no existe).
-3. Crea el primer admin y arranca la API, ambos leyendo `.env.lab` con el
-   `--env-file` nativo de Node (no requiere Docker ni cambiar `api/.env`):
+3. Crea el primer admin, opcionalmente llena datos de ejemplo y arranca la
+   API, los tres leyendo `.env.lab` con el `--env-file` nativo de Node (no
+   requiere Docker ni cambiar `api/.env`):
    ```powershell
    npm run seed:admin:lab
+   npm run seed:demo:lab   # opcional: usuarios y reportes de ejemplo,
+                           # incluidos reportes pendientes de otro usuario
+                           # para demostrar validar/rechazar desde el panel
    npm run start:lab
    ```
 4. **Revisa que la hora de Windows coincida con la del celular.** El 2FA
