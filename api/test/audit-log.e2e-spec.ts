@@ -5,13 +5,25 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { authenticator } from 'otplib';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import sharp from 'sharp';
 import { Repository } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { AppConfigService } from './../src/config/app-config.service';
 import { setupApp } from './../src/setup-app';
 import { MailService } from './../src/mail/mail.service';
 import { hashPassword } from './../src/common/utils/password-hash';
-import { BitacoraAuditoria, Usuario } from './../src/database/entities';
+import {
+  BitacoraAuditoria,
+  CategoriaFraude,
+  Plataforma,
+  Usuario,
+} from './../src/database/entities';
+import {
+  TestAdmin,
+  createVerifiedAdmin,
+  createVerifiedUser,
+  generateTotpCode,
+} from './utils/e2e-helpers';
 
 interface CaptchaChallengeBody {
   algorithm: string;
@@ -39,6 +51,10 @@ describe('Bitácora de auditoría (e2e) — sección 4.6', () => {
   let appConfig: AppConfigService;
   let usuarioRepo: Repository<Usuario>;
   let bitacoraRepo: Repository<BitacoraAuditoria>;
+  let plataformaRepo: Repository<Plataforma>;
+  let categoriaRepo: Repository<CategoriaFraude>;
+  let platformId: number;
+  let categoryId: number;
   let mailSend: jest.Mock<Promise<void>, [SentMail]>;
   let originalThrottleAuthLimit: string | undefined;
 
@@ -72,6 +88,21 @@ describe('Bitácora de auditoría (e2e) — sección 4.6', () => {
     bitacoraRepo = app.get<Repository<BitacoraAuditoria>>(
       getRepositoryToken(BitacoraAuditoria),
     );
+    plataformaRepo = app.get<Repository<Plataforma>>(
+      getRepositoryToken(Plataforma),
+    );
+    categoriaRepo = app.get<Repository<CategoriaFraude>>(
+      getRepositoryToken(CategoriaFraude),
+    );
+    const plataforma = await plataformaRepo.findOne({
+      where: { esOtra: false, activa: true },
+    });
+    const categoria = await categoriaRepo.findOne({ where: { activa: true } });
+    if (!plataforma || !categoria) {
+      throw new Error('Faltan catálogos activos para la prueba.');
+    }
+    platformId = plataforma.idPlataforma;
+    categoryId = categoria.idCategoria;
 
     authenticator.options = { step: 30, digits: 6, window: 1 };
   });
@@ -444,4 +475,181 @@ describe('Bitácora de auditoría (e2e) — sección 4.6', () => {
     expect(enableRow!.ip).not.toBeNull();
     expectDetalleSinSecretos(enableRow);
   });
+
+  // --- Acciones administrativas: admin_creado, reporte_revisado,
+  // comentario_moderado, usuario_reactivado, evidencia_eliminada ---
+  //
+  // Estas 5 ya existían en el código (sección 4.6, CLAUDE.md) pero ninguna
+  // tenía una prueba que de verdad revisara su fila en Bitacora_auditoria
+  // (solo el status code de la ruta) -- a diferencia de usuario_suspendido
+  // (admin-user-status.e2e-spec.ts) y catalogo_modificado
+  // (audit-concurrency.e2e-spec.ts), que sí la revisaban.
+
+  async function freshAdminTotpCode(admin: TestAdmin): Promise<string> {
+    await usuarioRepo.update(admin.idUsuario, { totpUltimoContador: null });
+    return generateTotpCode(admin.totpSecret, 0);
+  }
+
+  async function createReport(accessToken: string): Promise<number> {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/reports')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .field('titulo', `Reporte bitácora e2e ${Date.now()}`)
+      .field(
+        'descripcion',
+        'Descripción de prueba con más de veinte caracteres de longitud.',
+      )
+      .field('urlPublicacion', 'https://tienda-fraude.example.com/producto')
+      .field('plataformaId', String(platformId))
+      .field('categoriaId', String(categoryId))
+      .field('anonimo', 'false');
+    expect(response.status).toBe(201);
+    return (response.body as { id: number }).id;
+  }
+
+  it('admin_creado escribe su evento al crear otro admin desde el panel', async () => {
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const correo = `audit-e2e-nuevo-admin-${Date.now()}@example.com`;
+
+    const response = await request(app.getHttpServer() as App)
+      .post('/api/v1/admin/admins')
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({
+        nombre: 'Nuevo Admin Audit E2E',
+        correo,
+        totp: await freshAdminTotpCode(admin),
+      });
+    expect(response.status).toBe(201);
+    const nuevo = (response.body as { id: number }).id;
+
+    const row = await latestAuditRow(admin.idUsuario, 'admin_creado');
+    expect(row).not.toBeNull();
+    expect(row!.resultado).toBe('exito');
+    expect(row!.ip).not.toBeNull();
+    expect(row!.recursoId).toBe(nuevo);
+    expectDetalleSinSecretos(row);
+  }, 30_000);
+
+  it('reporte_revisado escribe su evento al validar un reporte', async () => {
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const author = await createVerifiedUser(app, usuarioRepo);
+    const reportId = await createReport(author.accessToken);
+
+    const response = await request(app.getHttpServer() as App)
+      .post(`/api/v1/admin/reports/${reportId}/review`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ decision: 'validado' });
+    expect(response.status).toBe(200);
+
+    const row = await latestAuditRow(admin.idUsuario, 'reporte_revisado');
+    expect(row).not.toBeNull();
+    expect(row!.resultado).toBe('exito');
+    expect(row!.ip).not.toBeNull();
+    expect(row!.recursoId).toBe(reportId);
+    expectDetalleSinSecretos(row);
+  }, 30_000);
+
+  it('comentario_moderado escribe su evento al confirmar un comentario oculto_auto', async () => {
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const author = await createVerifiedUser(app, usuarioRepo);
+    const commenter = await createVerifiedUser(app, usuarioRepo);
+    const flaggers = await Promise.all([
+      createVerifiedUser(app, usuarioRepo),
+      createVerifiedUser(app, usuarioRepo),
+      createVerifiedUser(app, usuarioRepo),
+    ]);
+    const reportId = await createReport(author.accessToken);
+
+    const commentResponse = await request(app.getHttpServer() as App)
+      .post(`/api/v1/reports/${reportId}/comments`)
+      .set('Authorization', `Bearer ${commenter.accessToken}`)
+      .send({ contenido: 'Comentario de prueba de bitácora', anonimo: false });
+    expect(commentResponse.status).toBe(201);
+    const commentId = (commentResponse.body as { id: number }).id;
+
+    for (const [i, flagger] of flaggers.entries()) {
+      const flagResponse = await request(app.getHttpServer() as App)
+        .post(`/api/v1/comments/${commentId}/flags`)
+        .set('Authorization', `Bearer ${flagger.accessToken}`)
+        .send({ motivo: 'spam', detalle: `Denuncia ${i}` });
+      expect(flagResponse.status).toBe(201);
+    }
+
+    const response = await request(app.getHttpServer() as App)
+      .patch(`/api/v1/admin/comments/${commentId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ accion: 'confirmar' });
+    expect(response.status).toBe(204);
+
+    const row = await latestAuditRow(admin.idUsuario, 'comentario_moderado');
+    expect(row).not.toBeNull();
+    expect(row!.resultado).toBe('exito');
+    expect(row!.ip).not.toBeNull();
+    expect(row!.recursoId).toBe(commentId);
+    expectDetalleSinSecretos(row);
+  }, 30_000);
+
+  it('usuario_reactivado escribe su evento al reactivar una cuenta suspendida', async () => {
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const target = await createVerifiedUser(app, usuarioRepo);
+
+    const suspendResponse = await request(app.getHttpServer() as App)
+      .patch(`/api/v1/admin/users/${target.idUsuario}/status`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ activo: false });
+    expect(suspendResponse.status).toBe(204);
+
+    const reactivateResponse = await request(app.getHttpServer() as App)
+      .patch(`/api/v1/admin/users/${target.idUsuario}/status`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ activo: true });
+    expect(reactivateResponse.status).toBe(204);
+
+    const row = await latestAuditRow(admin.idUsuario, 'usuario_reactivado');
+    expect(row).not.toBeNull();
+    expect(row!.resultado).toBe('exito');
+    expect(row!.ip).not.toBeNull();
+    expect(row!.recursoId).toBe(target.idUsuario);
+    expectDetalleSinSecretos(row);
+  }, 30_000);
+
+  it('evidencia_eliminada escribe su evento al quitar una imagen desde el panel', async () => {
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const author = await createVerifiedUser(app, usuarioRepo);
+    const reportId = await createReport(author.accessToken);
+
+    const image = await sharp({
+      create: {
+        width: 10,
+        height: 10,
+        channels: 3,
+        background: { r: 200, g: 50, b: 50 },
+      },
+    })
+      .png()
+      .toBuffer();
+
+    const addResponse = await request(app.getHttpServer())
+      .post(`/api/v1/reports/${reportId}/evidences`)
+      .set('Authorization', `Bearer ${author.accessToken}`)
+      .attach('evidencias', image, {
+        filename: 'foto.png',
+        contentType: 'image/png',
+      });
+    expect(addResponse.status).toBe(201);
+    const evidenceId = (addResponse.body as { evidencias: { id: number }[] })
+      .evidencias[0].id;
+
+    const response = await request(app.getHttpServer())
+      .delete(`/api/v1/admin/reports/${reportId}/evidences/${evidenceId}`)
+      .set('Authorization', `Bearer ${admin.accessToken}`);
+    expect(response.status).toBe(204);
+
+    const row = await latestAuditRow(admin.idUsuario, 'evidencia_eliminada');
+    expect(row).not.toBeNull();
+    expect(row!.resultado).toBe('exito');
+    expect(row!.ip).not.toBeNull();
+    expect(row!.recursoId).toBe(evidenceId);
+    expectDetalleSinSecretos(row);
+  }, 30_000);
 });

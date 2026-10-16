@@ -132,46 +132,121 @@ Un escaneo activo de OWASP ZAP contra la API, con sesión de admin, dejó
 cientos de filas de prueba en `Plataforma`/`Categoria_fraude` (sección 6) y,
 al revisar `Bitacora_auditoria`, solo 3 eventos `catalogo_modificado`
 quedaron registrados para todas esas creaciones/ediciones, los 3 con
-`ip`/`user_agent` en `NULL`. Investigación y hallazgos:
+`ip`/`user_agent` en `NULL`.
 
-- **Confirmado y corregido**: `createPlatform`/`updatePlatform`/
-  `createCategory`/`updateCategory` nunca recibían `@ClientInfo()` en el
-  controlador (a diferencia de `createAdmin`, que sí) — por eso esos 3
-  eventos, y en realidad *todos* los eventos `catalogo_modificado` desde que
-  existe esa funcionalidad, tenían `ip`/`userAgent` en `NULL` sin importar la
-  carga. No era un problema de concurrencia. Se agregó `@ClientInfo()` a los
-  4 endpoints (`api/src/admin/admin.controller.ts`) y se hilvanó hasta las 4
-  llamadas a `AuditService.log` (`api/src/admin/admin.service.ts`). Cubierto
-  por `api/test/audit-concurrency.e2e-spec.ts`.
-- **Verificado, no es un bug**: el `req.id` (mismo valor que el header
-  `X-Request-Id` de la respuesta al cliente) *ya* aparecía automáticamente en
-  el log de error de `AuditService.log` antes de este cambio, sin tocar
-  código — `nestjs-pino` lo propaga por una `AsyncLocalStorage` (ver
-  `node_modules/nestjs-pino/dist/cjs/storage.js`) mientras la llamada ocurra
-  dentro de la misma cadena async de la petición (como aquí, con `await`
-  directo, sin `setTimeout`/callbacks sueltos). Se confirmó forzando un
-  fallo real del `insert` dentro de una petición HTTP real: el log de error
-  mostró el mismo `req.id` que el header de respuesta.
-- **No se pudo reproducir la pérdida bajo carga con el código actual**: se
-  intentó reproducir la pérdida masiva con (1) 150 llamadas concurrentes
-  directas a `AdminService.createPlatform`, y (2) 100–300 peticiones HTTP
-  reales concurrentes contra una instancia efímera completa (mismo stack de
-  guards/interceptores que producción). En ambos casos, **0 eventos
-  perdidos**. No se puede afirmar con certeza cuál fue el mecanismo exacto
-  durante el escaneo real (posible contención de conexiones bajo un patrón
-  de carga que no se logró replicar exactamente, p. ej. muchas rutas
-  distintas a la vez durante varios minutos, no solo una).
-- **Endurecido de todas formas** (sin esperar a reproducirlo, porque son
-  mitigaciones razonables en sí mismas):
+**Causa real de los 3 eventos sin `ip`/`user_agent` (confirmada y corregida,
+afecta a mucho más que catálogos):** `createPlatform`, `updatePlatform`,
+`createCategory`, `updateCategory`, y también `createAdmin` (el propio
+`admin_creado`), `reviewReport`, `deleteEvidence`, `moderateComment` y
+`updateUserStatus` nunca recibían `@ClientInfo()` en el controlador, o lo
+recibían pero no lo pasaban a la llamada final de auditoría. Es decir: **8 de
+las 18 acciones de la sección 4.6** (`catalogo_modificado`, `admin_creado`,
+`reporte_revisado`, `evidencia_eliminada`, `comentario_moderado`,
+`usuario_suspendido`, `usuario_reactivado`) nunca guardaban `ip`/`userAgent`,
+sin importar la carga — nunca fue un problema de concurrencia. Se agregó
+`@ClientInfo()` a esos controladores y se hilvanó hasta cada llamada a
+`AuditService.log` (`api/src/admin/admin.controller.ts`,
+`api/src/admin/admin.service.ts`). Cubierto con pruebas e2e dedicadas para
+cada una (`api/test/audit-log.e2e-spec.ts`, `admin-user-status.e2e-spec.ts`,
+`audit-concurrency.e2e-spec.ts`).
+
+**Causa real de que solo 3 de ~245 creaciones/ediciones de catálogo quedaran
+en la bitácora (revisada a fondo con `git log`/`git diff`, tras una hipótesis
+inicial equivocada):** se pensó primero que `createPlatform`/`createCategory`
+simplemente no llamaban a `AuditService.log` (solo el `PATCH`), y que por eso
+se perdían las creaciones. **Esa hipótesis no se sostiene**: revisando con
+`git log --oneline -- api/src/admin/admin.service.ts` y `git show
+<cada-commit>:... | grep auditService.log`, la llamada a
+`auditService.log({accion: 'catalogo_modificado', ...})` está presente, sin
+excepción, en **createPlatform y createCategory, en absolutamente todos los
+commits** desde el que introdujo esos métodos (`0be6546`, 2026-10-13) hasta
+el más reciente — nunca existió una versión *comiteada* donde el `create`
+no auditara. Tampoco se pudo reproducir una pérdida real bajo concurrencia
+con el código tal como está hoy: ni 150 llamadas directas concurrentes a
+`AdminService.createPlatform`, ni 100–300 peticiones HTTP reales concurrentes
+contra una instancia efímera completa (mismo stack de guards/interceptores
+que producción) perdieron un solo evento. Dos piezas de evidencia adicionales
+señalan la causa real:
+- Los 3 eventos que sí quedaron (crear + 2 ediciones, 2026-10-15 08:39–08:45
+  UTC, plataforma id 141, nombre final "Prueba ClickSafe Editada") no son
+  del escaneo: son una prueba manual real desde el panel, ya reconocida como
+  tal ("yo hice" esas ediciones) — por eso el script de limpieza (sección 6)
+  la excluye explícitamente.
+- La fila de bitácora inmediatamente anterior a esos 3 eventos (`id_evento`
+  125, un `login`) es consecutiva con la primera (126): no hay ningún hueco
+  en el autoincremental antes de ella. Un `INSERT` que se intenta y falla
+  (p. ej. por una restricción) sí consume un valor de autoincremento en
+  InnoDB aunque la fila no quede — su ausencia aquí indica que, para las
+  ~242 creaciones/ediciones de catálogo de ZAP, el código en ejecución en
+  ese momento **nunca llegó a intentar** el `INSERT` en la bitácora, no que
+  lo intentó y falló.
+- Esa misma ventana del escaneo (08:39–08:45 UTC, 2026-10-15) es *anterior*
+  al commit `bab6b83` (09:43 UTC del mismo día, ya en `main`) que se estaba
+  desarrollando activamente en ese momento sobre estos mismos 4 métodos. Git
+  solo conserva estados *comiteados*; no existe una forma de reconstruir con
+  certeza qué versión exacta del archivo tenía el servidor de desarrollo
+  cargada (con `--watch`) en ese instante si nunca se comiteó así.
+
+**Conclusión honesta:** la explicación más sustentada con la evidencia
+disponible es una discrepancia de código/despliegue durante desarrollo
+activo local (una versión de los 4 métodos, nunca comiteada tal cual, sin la
+llamada de auditoría funcionando todavía) — **no una pérdida de eventos bajo
+carga concurrente**, que nunca se logró demostrar con el código actual. Este
+documento ya no afirma eso. De todas formas, se endurecieron dos puntos
+razonables en sí mismos, sin depender de esa causa:
   - `DB_POOL_SIZE` (zod, default 20): antes el pool de conexiones mysql2 usaba
     el valor por defecto implícito del driver (10) sin que quedara
     documentado ni fuera ajustable sin tocar código.
   - `AuditService.log` reintenta una vez (75 ms de espera) antes de darse
     por vencido y recién ahí registrar el fallo en el log de la app; antes
     un solo fallo transitorio perdía el evento de inmediato.
-- **Prueba de regresión**: `api/test/audit-concurrency.e2e-spec.ts` dispara
-  50 creaciones de plataforma concurrentes y verifica que las 50 queden en
-  `Bitacora_auditoria` con `ip` y `userAgent` no nulos.
+
+**Verificado, no era un bug:** el `req.id` (mismo valor que el header
+`X-Request-Id` de la respuesta al cliente) *ya* aparecía automáticamente en
+el log de error de `AuditService.log` antes de cualquiera de estos cambios,
+sin tocar código — `nestjs-pino` lo propaga por una `AsyncLocalStorage` (ver
+`node_modules/nestjs-pino/dist/cjs/storage.js`) mientras la llamada ocurra
+dentro de la misma cadena async de la petición (como aquí, con `await`
+directo, sin `setTimeout`/callbacks sueltos). Se confirmó forzando un fallo
+real del `insert` dentro de una petición HTTP real: el log de error mostró
+el mismo `req.id` que el header de respuesta.
+
+**Prueba de regresión:** `api/test/audit-concurrency.e2e-spec.ts` dispara 50
+creaciones de plataforma concurrentes y verifica (consultando
+`Bitacora_auditoria` directamente, no la página de `GET /admin/audit-log`,
+para no depender de qué tan reciente quede cada fila si otras suites corren
+en paralelo) que las 50 queden registradas con `ip` y `userAgent` no nulos.
+`api/test/audit-log.e2e-spec.ts` y `admin-user-status.e2e-spec.ts` hacen lo
+mismo para las otras 7 acciones recién corregidas.
+
+## 13. Hallazgo de CodeQL corregido: confusión de tipos en la subida de evidencias
+
+CodeQL marcó una alerta real ("Type confusion through parameter tampering")
+en `api/src/reports/reports.service.ts`, en el `if (files.length >
+MAX_EVIDENCES)` de `createReport`. `@UploadedFiles()` (multer) no pasa por
+el `ValidationPipe` global — no es un DTO de `class-validator` — así que el
+tipo que declara el controlador (`{ buffer: Buffer }[] | undefined`) es solo
+una promesa de TypeScript en tiempo de compilación, nunca algo que el
+runtime verifique. Si `files` llegara como un *string* en vez de un arreglo,
+`files.length` cuenta caracteres (JS permite `.length` en strings) y la
+comparación se evalúa igual, sin lanzar — evadiendo el límite de 5
+evidencias por reporte; el mismo patrón existía en `addEvidences`
+(`files.length === 0` y `files.map(...)`).
+
+| Control | Ataque que previene | ASVS 5.0 | Archivo |
+|---|---|---|---|
+| `assertValidUploadedFiles`: valida `Array.isArray(files)` y que cada elemento tenga un `Buffer` real, antes de cualquier `.length`/`.map()`, en `createReport` y `addEvidences` | Evadir el límite de evidencias (o tronar el servidor con un error no controlado) mandando el campo `evidencias` como texto en vez de un archivo adjunto | 2.2.1 | `api/src/reports/reports.service.ts` |
+
+Se revisó el mismo patrón (un valor que llega directo de la petición, sin
+pasar por un DTO, usado con `.length`/iterado) en el resto del código:
+`@UploadedFiles()` solo se usa en esos 2 lugares, y todo `@Body()`/`@Query()`
+del proyecto está tipado a una clase de DTO validada por el `ValidationPipe`
+global — ningún otro lugar quedó expuesto a esto.
+
+Pruebas e2e (`api/test/reports-security.e2e-spec.ts`): mandar `evidencias`
+como campo de texto (no como archivo adjunto) en `POST /reports` y en
+`POST /reports/:id/evidences` responde 400 en ambos, nunca 500 ni crea el
+reporte/evidencia.
 
 ---
 

@@ -1,24 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { Repository } from 'typeorm';
 import { AppModule } from './../src/app.module';
 import { AppConfigService } from './../src/config/app-config.service';
 import { setupApp } from './../src/setup-app';
+import { BitacoraAuditoria } from './../src/database/entities';
 import {
   TestAdmin,
   createVerifiedAdmin,
   raiseAuthThrottleForTests,
   usuarioRepoFrom,
 } from './utils/e2e-helpers';
-
-interface AuditLogEntry {
-  id: string;
-  recursoTipo: string | null;
-  recursoId: number | null;
-  ip: string | null;
-  userAgent: string | null;
-}
 
 /**
  * Un escaneo activo (OWASP ZAP) con sesión de admin dejó cientos de filas en
@@ -34,6 +29,7 @@ interface AuditLogEntry {
 describe('Bitácora bajo carga concurrente (e2e)', () => {
   let app: NestExpressApplication;
   let admin: TestAdmin;
+  let bitacoraRepo: Repository<BitacoraAuditoria>;
   let restoreThrottle: () => void;
 
   beforeAll(async () => {
@@ -49,6 +45,9 @@ describe('Bitácora bajo carga concurrente (e2e)', () => {
     await app.init();
 
     admin = await createVerifiedAdmin(app, usuarioRepoFrom(app));
+    bitacoraRepo = app.get<Repository<BitacoraAuditoria>>(
+      getRepositoryToken(BitacoraAuditoria),
+    );
   }, 30_000);
 
   afterAll(async () => {
@@ -76,23 +75,24 @@ describe('Bitácora bajo carga concurrente (e2e)', () => {
     });
     expect(createdIds).toHaveLength(N);
 
-    const auditResponse = await request(app.getHttpServer())
-      .get('/api/v1/admin/audit-log')
-      .query({ accion: 'catalogo_modificado', limit: 50, page: 1 })
-      .set('Authorization', `Bearer ${admin.accessToken}`);
-    expect(auditResponse.status).toBe(200);
+    // Consulta el repositorio directamente, filtrado por los ids que de
+    // verdad creó esta prueba: GET /admin/audit-log solo devuelve página por
+    // página (máx. 50 por diseño, 4.7) ordenado por fecha -- si otro archivo
+    // e2e crea/edita catálogos al mismo tiempo (varios corren en paralelo),
+    // sus propios eventos catalogo_modificado se intercalarían con los de
+    // esta prueba y podrían empujar algunos de los 50 fuera de esa ventana,
+    // sin que eso signifique que de verdad se perdieron.
+    const rows = await bitacoraRepo
+      .createQueryBuilder('b')
+      .where('b.accion = :accion', { accion: 'catalogo_modificado' })
+      .andWhere('b.recurso_tipo = :tipo', { tipo: 'Plataforma' })
+      .andWhere('b.recurso_id IN (:...ids)', { ids: createdIds })
+      .getMany();
 
-    const items = (
-      auditResponse.body as { items: AuditLogEntry[]; total: number }
-    ).items.filter(
-      (e) =>
-        e.recursoTipo === 'Plataforma' && createdIds.includes(e.recursoId!),
-    );
-
-    expect(items).toHaveLength(N);
-    for (const entry of items) {
-      expect(entry.ip).not.toBeNull();
-      expect(entry.userAgent).not.toBeNull();
+    expect(rows).toHaveLength(N);
+    for (const row of rows) {
+      expect(row.ip).not.toBeNull();
+      expect(row.userAgent).not.toBeNull();
     }
   }, 30_000);
 });

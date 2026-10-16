@@ -225,6 +225,7 @@ export class AdminService {
     idReporte: number,
     adminId: number,
     dto: ReviewReportDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const reporte = await this.reporteRepo.findOne({ where: { idReporte } });
     if (!reporte) {
@@ -274,6 +275,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Reporte',
       recursoId: idReporte,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { decision: dto.decision },
     });
   }
@@ -283,6 +286,7 @@ export class AdminService {
     idReporte: number,
     idEvidencia: number,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const evidencia = await this.evidenciaRepo.findOne({
       where: { idEvidencia, idReporte },
@@ -302,6 +306,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Evidencia',
       recursoId: idEvidencia,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { idReporte },
     });
   }
@@ -377,6 +383,7 @@ export class AdminService {
     idComentario: number,
     adminId: number,
     dto: ModerateCommentDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const comentario = await this.comentarioRepo.findOne({
       where: { idComentario },
@@ -428,6 +435,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Comentario',
       recursoId: idComentario,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: dto.accion satisfies AccionModeracion },
     });
 
@@ -476,6 +485,7 @@ export class AdminService {
     idUsuario: number,
     adminId: number,
     dto: UpdateUserStatusDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     if (idUsuario === adminId) {
       throw new BadRequestException({
@@ -514,6 +524,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Usuario',
       recursoId: idUsuario,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
     });
   }
 
@@ -577,6 +589,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Usuario',
       recursoId: nuevo.idUsuario,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { via: 'admin' },
     });
 

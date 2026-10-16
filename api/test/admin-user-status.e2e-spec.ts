@@ -144,6 +144,7 @@ describe('Admin (e2e) — estado de usuarios', () => {
     expect(auditRow?.resultado).toBe('exito');
     expect(auditRow?.recursoTipo).toBe('Usuario');
     expect(auditRow?.recursoId).toBe(target.idUsuario);
+    expect(auditRow?.ip).not.toBeNull();
   }, 30_000);
 
   it('un usuario normal no puede llamar a este endpoint (403)', async () => {
