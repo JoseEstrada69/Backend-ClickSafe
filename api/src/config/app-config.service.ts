@@ -117,6 +117,7 @@ export class AppConfigService {
     username: string;
     password: string;
     name: string;
+    poolSize: number;
   } {
     return {
       host: this.configService.get('DB_HOST', { infer: true }),
@@ -124,6 +125,7 @@ export class AppConfigService {
       username: this.configService.get('DB_USERNAME', { infer: true }),
       password: this.configService.get('DB_PASSWORD', { infer: true }),
       name: this.configService.get('DB_NAME', { infer: true }),
+      poolSize: this.configService.get('DB_POOL_SIZE', { infer: true }),
     };
   }
 

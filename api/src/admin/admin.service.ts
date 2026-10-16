@@ -225,6 +225,7 @@ export class AdminService {
     idReporte: number,
     adminId: number,
     dto: ReviewReportDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const reporte = await this.reporteRepo.findOne({ where: { idReporte } });
     if (!reporte) {
@@ -274,6 +275,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Reporte',
       recursoId: idReporte,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { decision: dto.decision },
     });
   }
@@ -283,6 +286,7 @@ export class AdminService {
     idReporte: number,
     idEvidencia: number,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const evidencia = await this.evidenciaRepo.findOne({
       where: { idEvidencia, idReporte },
@@ -302,6 +306,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Evidencia',
       recursoId: idEvidencia,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { idReporte },
     });
   }
@@ -377,6 +383,7 @@ export class AdminService {
     idComentario: number,
     adminId: number,
     dto: ModerateCommentDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     const comentario = await this.comentarioRepo.findOne({
       where: { idComentario },
@@ -428,6 +435,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Comentario',
       recursoId: idComentario,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: dto.accion satisfies AccionModeracion },
     });
 
@@ -476,6 +485,7 @@ export class AdminService {
     idUsuario: number,
     adminId: number,
     dto: UpdateUserStatusDto,
+    meta: RequestMeta = {},
   ): Promise<void> {
     if (idUsuario === adminId) {
       throw new BadRequestException({
@@ -514,6 +524,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Usuario',
       recursoId: idUsuario,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
     });
   }
 
@@ -577,6 +589,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Usuario',
       recursoId: nuevo.idUsuario,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { via: 'admin' },
     });
 
@@ -603,6 +617,7 @@ export class AdminService {
   async createPlatform(
     dto: CreatePlatformDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminPlatformResponse> {
     let saved: Plataforma;
     try {
@@ -629,6 +644,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Plataforma',
       recursoId: saved.idPlataforma,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'crear' },
     });
 
@@ -640,6 +657,7 @@ export class AdminService {
     idPlataforma: number,
     dto: UpdatePlatformDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminPlatformResponse> {
     const plataforma = await this.plataformaRepo.findOne({
       where: { idPlataforma },
@@ -675,6 +693,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Plataforma',
       recursoId: idPlataforma,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'editar' },
     });
 
@@ -694,6 +714,7 @@ export class AdminService {
   async createCategory(
     dto: CreateCategoryDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminCategoryResponse> {
     let saved: CategoriaFraude;
     try {
@@ -720,6 +741,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Categoria_fraude',
       recursoId: saved.idCategoria,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'crear' },
     });
 
@@ -730,6 +753,7 @@ export class AdminService {
     idCategoria: number,
     dto: UpdateCategoryDto,
     adminId: number,
+    meta: RequestMeta = {},
   ): Promise<AdminCategoryResponse> {
     const categoria = await this.categoriaRepo.findOne({
       where: { idCategoria },
@@ -761,6 +785,8 @@ export class AdminService {
       resultado: 'exito',
       recursoTipo: 'Categoria_fraude',
       recursoId: idCategoria,
+      ip: meta.ip,
+      userAgent: meta.userAgent,
       detalle: { accion: 'editar' },
     });
 

@@ -105,6 +105,13 @@ const baseEnvSchema = z.object({
   DB_USERNAME: z.string().min(1).default('clicksafe_api'),
   DB_PASSWORD: z.string().min(1, 'DB_PASSWORD es obligatorio'),
   DB_NAME: z.string().min(1).default('clicksafe_db'),
+  // Tamaño del pool de conexiones mysql2. Sin fijarlo explícitamente, el
+  // driver usa su propio valor por defecto (10) sin que quede documentado
+  // en ningún lado del proyecto. Una carga concurrente alta (p. ej. un
+  // escaneo activo contra varias rutas a la vez) satura ese pool más
+  // rápido de lo que parece razonable para la API real; subirlo y dejarlo
+  // explícito reduce esa contención (docs/seguridad.md).
+  DB_POOL_SIZE: z.coerce.number().int().positive().default(20),
 
   // Correo vía Mailpit en desarrollo (1, regla 12) — sin servicios externos.
   MAIL_HOST: z.string().min(1).default('127.0.0.1'),
