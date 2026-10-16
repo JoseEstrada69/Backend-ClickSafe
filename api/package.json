@@ -24,6 +24,7 @@
     "seed:admin": "ts-node -r tsconfig-paths/register scripts/seed-admin.ts",
     "seed:admin:lab": "node --env-file=.env.lab dist/scripts/seed-admin.js",
     "seed:demo": "ts-node -r tsconfig-paths/register scripts/seed-demo.ts",
+    "seed:demo:lab": "node --env-file=.env.lab dist/scripts/seed-demo.js",
     "cleanup:zap": "ts-node -r tsconfig-paths/register scripts/cleanup-zap.ts",
     "db:backup": "ts-node -r tsconfig-paths/register scripts/db-backup.ts",
     "db:restore": "ts-node -r tsconfig-paths/register scripts/db-restore.ts",
