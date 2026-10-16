@@ -101,7 +101,7 @@ async function main(): Promise<void> {
       console.error(
         `No se encontró el comando "${connection.mysqlPath}". ¿Está instalado MySQL Server? ` +
           'Si mysql no está en el PATH, fija MYSQL_PATH en api/.env (p. ej. ' +
-          '"C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql.exe").',
+          String.raw`"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe").`,
       );
     } else {
       console.error('No se pudo ejecutar mysql:', error.message);

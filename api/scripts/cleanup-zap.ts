@@ -238,7 +238,11 @@ async function run(): Promise<void> {
       return;
     }
 
+    // Secuencial a propósito (no Promise.all): es un script de limpieza
+    // destructivo sobre datos reales de desarrollo -- mejor una escritura a
+    // la vez, con salida determinista, que muchos UPDATE simultáneos.
     for (const r of reasignaciones) {
+      // NOSONAR: await intencional dentro del loop, ver comentario de arriba.
       await reporteRepo.update(
         { idReporte: r.idReporte },
         { [r.campo]: r.aId },
