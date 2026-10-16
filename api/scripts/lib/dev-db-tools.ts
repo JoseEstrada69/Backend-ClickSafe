@@ -90,7 +90,7 @@ export function assertNotProduction(scriptName: string): void {
 
 /** Timestamp sin ":" (Windows no acepta ":" en nombres de archivo). */
 export function timestampForFilename(date: Date = new Date()): string {
-  return date.toISOString().replace(/:/g, '-').replace(/\..+/, '');
+  return date.toISOString().replaceAll(':', '-').replace(/\..+/, '');
 }
 
 /**

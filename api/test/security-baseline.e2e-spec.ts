@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
@@ -6,14 +6,22 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AppConfigService } from './../src/config/app-config.service';
 import { setupApp } from './../src/setup-app';
-import { createVerifiedUser, usuarioRepoFrom } from './utils/e2e-helpers';
+import {
+  createVerifiedUser,
+  solveCaptcha,
+  usuarioRepoFrom,
+} from './utils/e2e-helpers';
 
-interface CaptchaChallengeBody {
-  algorithm: string;
-  challenge: string;
-  maxnumber: number;
-  salt: string;
-  signature: string;
+async function createApp(): Promise<NestExpressApplication> {
+  const moduleFixture: TestingModule = await Test.createTestingModule({
+    imports: [AppModule],
+  }).compile();
+  const app = moduleFixture.createNestApplication<NestExpressApplication>({
+    bodyParser: false,
+  });
+  setupApp(app, app.get(AppConfigService));
+  await app.init();
+  return app;
 }
 
 /**
@@ -31,50 +39,6 @@ interface CaptchaChallengeBody {
  * al revés, nunca alcanzarlo si otra prueba ya lo hubiera agotado.
  */
 describe('Seguridad base (e2e)', () => {
-  async function createApp(): Promise<NestExpressApplication> {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-    const app = moduleFixture.createNestApplication<NestExpressApplication>({
-      bodyParser: false,
-    });
-    setupApp(app, app.get(AppConfigService));
-    await app.init();
-    return app;
-  }
-
-  function sha256(value: string): string {
-    return createHash('sha256').update(value).digest('hex');
-  }
-
-  async function solveCaptcha(app: NestExpressApplication): Promise<string> {
-    const response = await request(app.getHttpServer()).get(
-      '/api/v1/auth/captcha',
-    );
-    const challenge = response.body as CaptchaChallengeBody;
-
-    let foundNumber = -1;
-    for (let number = 0; number <= challenge.maxnumber; number++) {
-      if (sha256(challenge.salt + number.toString()) === challenge.challenge) {
-        foundNumber = number;
-        break;
-      }
-    }
-    if (foundNumber === -1) {
-      throw new Error('No se encontró un número solución.');
-    }
-
-    return Buffer.from(
-      JSON.stringify({
-        algorithm: challenge.algorithm,
-        challenge: challenge.challenge,
-        number: foundNumber,
-        salt: challenge.salt,
-        signature: challenge.signature,
-      }),
-    ).toString('base64');
-  }
-
   it('mandar "rol" en POST /auth/register responde 400 (mass assignment)', async () => {
     const app = await createApp();
     try {
@@ -85,7 +49,9 @@ describe('Seguridad base (e2e)', () => {
         .send({
           nombre: 'Intento Mass Assignment',
           correo: `mass-assignment-${Date.now()}@example.com`,
-          password: 'Xk9#mPq2vL7zT4Qw',
+          // Generada al azar (nunca un literal): este campo solo necesita
+          // una contraseña con formato válido, no una real.
+          password: randomBytes(12).toString('base64url'),
           captcha,
           rol: 'admin',
         });
@@ -126,6 +92,9 @@ describe('Seguridad base (e2e)', () => {
     try {
       const responses = [];
       for (let i = 0; i < 6; i++) {
+        // NOSONAR: secuencial a propósito -- la petición 6 debe llegar
+        // DESPUÉS de que las 5 anteriores ya se contaron, para que el
+        // límite real de /auth/* se cruce en el orden esperado.
         responses.push(
           await request(app.getHttpServer()).get('/api/v1/auth/captcha'),
         );

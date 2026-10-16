@@ -82,7 +82,7 @@ async function main(): Promise<void> {
       console.error(
         `No se encontró el comando "${connection.mysqldumpPath}". ¿Está instalado MySQL Server? ` +
           'Si mysqldump no está en el PATH, fija MYSQLDUMP_PATH en api/.env (p. ej. ' +
-          '"C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe").',
+          String.raw`"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysqldump.exe").`,
       );
     } else {
       console.error('No se pudo ejecutar mysqldump:', error.message);

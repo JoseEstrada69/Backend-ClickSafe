@@ -568,6 +568,8 @@ describe('Bitácora de auditoría (e2e) — sección 4.6', () => {
     const commentId = (commentResponse.body as { id: number }).id;
 
     for (const [i, flagger] of flaggers.entries()) {
+      // NOSONAR: secuencial a propósito, para que `detalle: Denuncia ${i}`
+      // quede en un orden predecible al revisarlo luego.
       const flagResponse = await request(app.getHttpServer() as App)
         .post(`/api/v1/comments/${commentId}/flags`)
         .set('Authorization', `Bearer ${flagger.accessToken}`)
