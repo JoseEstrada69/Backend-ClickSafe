@@ -189,6 +189,64 @@ describe('Admin (e2e) — detalle de reporte', () => {
     expect(body.esMio).toBe(true);
   }, 30_000);
 
+  it('validar un reporte notifica al autor, visible en GET /notifications', async () => {
+    const usuarioRepo = usuarioRepoFrom(app);
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const author = await createVerifiedUser(app, usuarioRepo);
+    const reportId = await createReport(author.accessToken);
+
+    const reviewResponse = await request(app.getHttpServer())
+      .post(`/api/v1/admin/reports/${reportId}/review`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ decision: 'validado' });
+    expect(reviewResponse.status).toBe(200);
+
+    const notificationsResponse = await request(app.getHttpServer())
+      .get('/api/v1/notifications')
+      .set('Authorization', `Bearer ${author.accessToken}`);
+    expect(notificationsResponse.status).toBe(200);
+
+    const body = notificationsResponse.body as {
+      items: {
+        tipo: string;
+        mensaje: string;
+        leida: boolean;
+        reporteId: number;
+      }[];
+    };
+    const notificacion = body.items.find((n) => n.reporteId === reportId);
+    expect(notificacion).toBeDefined();
+    expect(notificacion?.tipo).toBe('reporte_validado');
+    expect(notificacion?.leida).toBe(false);
+    expect(typeof notificacion?.mensaje).toBe('string');
+    expect(notificacion?.mensaje.length).toBeGreaterThan(0);
+  }, 30_000);
+
+  it('rechazar un reporte notifica al autor con tipo reporte_rechazado', async () => {
+    const usuarioRepo = usuarioRepoFrom(app);
+    const admin = await createVerifiedAdmin(app, usuarioRepo);
+    const author = await createVerifiedUser(app, usuarioRepo);
+    const reportId = await createReport(author.accessToken);
+
+    const reviewResponse = await request(app.getHttpServer())
+      .post(`/api/v1/admin/reports/${reportId}/review`)
+      .set('Authorization', `Bearer ${admin.accessToken}`)
+      .send({ decision: 'rechazado', comentario: 'No cumple los criterios.' });
+    expect(reviewResponse.status).toBe(200);
+
+    const notificationsResponse = await request(app.getHttpServer())
+      .get('/api/v1/notifications')
+      .set('Authorization', `Bearer ${author.accessToken}`);
+    expect(notificationsResponse.status).toBe(200);
+
+    const body = notificationsResponse.body as {
+      items: { tipo: string; reporteId: number }[];
+    };
+    const notificacion = body.items.find((n) => n.reporteId === reportId);
+    expect(notificacion).toBeDefined();
+    expect(notificacion?.tipo).toBe('reporte_rechazado');
+  }, 30_000);
+
   it('totalComentarios cuenta solo los comentarios visibles, igual que el detalle público', async () => {
     const usuarioRepo = usuarioRepoFrom(app);
     const admin = await createVerifiedAdmin(app, usuarioRepo);
