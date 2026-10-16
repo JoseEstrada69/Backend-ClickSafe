@@ -61,4 +61,15 @@ describe('AuditService', () => {
     ).resolves.toBeUndefined();
     expect(logger.error).toHaveBeenCalled();
   });
+
+  it('reintenta una vez: si el segundo intento sí inserta, no se pierde el evento ni se registra error', async () => {
+    repository.insert
+      .mockRejectedValueOnce(new Error('bloqueo momentáneo'))
+      .mockResolvedValueOnce(undefined);
+
+    await service.log({ accion: 'catalogo_modificado', resultado: 'exito' });
+
+    expect(repository.insert).toHaveBeenCalledTimes(2);
+    expect(logger.error).not.toHaveBeenCalled();
+  });
 });

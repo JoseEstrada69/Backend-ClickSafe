@@ -207,7 +207,7 @@ describe('Admin (e2e) — admins y catálogos', () => {
       expect(response.status).toBe(400);
     });
 
-    it('crear dos plataformas con el mismo nombre responde 409', async () => {
+    it('crear dos plataformas con el mismo nombre responde 409 CATALOG_NAME_TAKEN', async () => {
       const nombre = `Duplicada E2E ${Date.now()}`;
       const first = await request(app.getHttpServer() as App)
         .post('/api/v1/admin/platforms')
@@ -220,6 +220,74 @@ describe('Admin (e2e) — admins y catálogos', () => {
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({ nombre });
       expect(second.status).toBe(409);
+      expect((second.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
+    });
+
+    it('renombrar una plataforma al nombre de otra responde 409 CATALOG_NAME_TAKEN', async () => {
+      const nombreExistente = `Plataforma Existente E2E ${Date.now()}`;
+      await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/platforms')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+
+      const createResponse = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/platforms')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: `Plataforma A Renombrar E2E ${Date.now()}` });
+      const { id } = createResponse.body as { id: number };
+
+      const renameResponse = await request(app.getHttpServer() as App)
+        .patch(`/api/v1/admin/platforms/${id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+      expect(renameResponse.status).toBe(409);
+      expect((renameResponse.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
+    });
+
+    it('acepta un nombre con acentos, ñ y la puntuación permitida', async () => {
+      const nombre = `Tiendita Ñoño's E2E, S.A. de C.V. (México) - ${Date.now()} & Cía.`;
+      const response = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/platforms')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre });
+      expect(response.status).toBe(201);
+      expect((response.body as { nombre: string }).nombre).toBe(nombre);
+    });
+
+    it.each([
+      ['comilla simple (payload típico de SQLi)', "Tienda' OR '1'='1"],
+      ['punto y coma', 'Tienda;drop'],
+      ['chr() de un escáner como ZAP', '";print(chr(122))'],
+      ['una URL completa', 'http://www.google.com/'],
+      ['solo 1 carácter', 'A'],
+      ['más de 100 caracteres', 'A'.repeat(101)],
+    ])(
+      'POST /admin/platforms rechaza un nombre con %s',
+      async (_caso, nombre) => {
+        const response = await request(app.getHttpServer() as App)
+          .post('/api/v1/admin/platforms')
+          .set('Authorization', `Bearer ${admin.accessToken}`)
+          .send({ nombre });
+        expect(response.status).toBe(400);
+      },
+    );
+
+    it('PATCH /admin/platforms/:id también aplica la lista blanca del nombre', async () => {
+      const createResponse = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/platforms')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: `Plataforma Válida E2E ${Date.now()}` });
+      const { id } = createResponse.body as { id: number };
+
+      const response = await request(app.getHttpServer() as App)
+        .patch(`/api/v1/admin/platforms/${id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: "Tienda' AND '1'='1' --" });
+      expect(response.status).toBe(400);
     });
 
     it('nunca se puede desactivar la plataforma "Otra"', async () => {
@@ -301,7 +369,7 @@ describe('Admin (e2e) — admins y catálogos', () => {
       expect(body.activa).toBe(true);
     });
 
-    it('crear dos categorías con el mismo nombre responde 409', async () => {
+    it('crear dos categorías con el mismo nombre responde 409 CATALOG_NAME_TAKEN', async () => {
       const nombre = `Categoría Duplicada E2E ${Date.now()}`;
       const first = await request(app.getHttpServer() as App)
         .post('/api/v1/admin/categories')
@@ -314,6 +382,74 @@ describe('Admin (e2e) — admins y catálogos', () => {
         .set('Authorization', `Bearer ${admin.accessToken}`)
         .send({ nombre });
       expect(second.status).toBe(409);
+      expect((second.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
+    });
+
+    it('renombrar una categoría al nombre de otra responde 409 CATALOG_NAME_TAKEN', async () => {
+      const nombreExistente = `Categoría Existente E2E ${Date.now()}`;
+      await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/categories')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+
+      const createResponse = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/categories')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: `Categoría A Renombrar E2E ${Date.now()}` });
+      const { id } = createResponse.body as { id: number };
+
+      const renameResponse = await request(app.getHttpServer() as App)
+        .patch(`/api/v1/admin/categories/${id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: nombreExistente });
+      expect(renameResponse.status).toBe(409);
+      expect((renameResponse.body as { code?: string }).code).toBe(
+        'CATALOG_NAME_TAKEN',
+      );
+    });
+
+    it('acepta un nombre con acentos, ñ y la puntuación permitida', async () => {
+      const nombre = `Fraude de envío fantasma (España) - Año ${Date.now()} & más`;
+      const response = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/categories')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre });
+      expect(response.status).toBe(201);
+      expect((response.body as { nombre: string }).nombre).toBe(nombre);
+    });
+
+    it.each([
+      ['comilla simple (payload típico de SQLi)', "Categoría' OR '1'='1"],
+      ['punto y coma', 'Categoría;drop'],
+      ['chr() de un escáner como ZAP', '";print(chr(122))'],
+      ['una URL completa', 'http://www.google.com/'],
+      ['solo 1 carácter', 'A'],
+      ['más de 100 caracteres', 'A'.repeat(101)],
+    ])(
+      'POST /admin/categories rechaza un nombre con %s',
+      async (_caso, nombre) => {
+        const response = await request(app.getHttpServer() as App)
+          .post('/api/v1/admin/categories')
+          .set('Authorization', `Bearer ${admin.accessToken}`)
+          .send({ nombre });
+        expect(response.status).toBe(400);
+      },
+    );
+
+    it('PATCH /admin/categories/:id también aplica la lista blanca del nombre', async () => {
+      const createResponse = await request(app.getHttpServer() as App)
+        .post('/api/v1/admin/categories')
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: `Categoría Válida E2E ${Date.now()}` });
+      const { id } = createResponse.body as { id: number };
+
+      const response = await request(app.getHttpServer() as App)
+        .patch(`/api/v1/admin/categories/${id}`)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .send({ nombre: "Categoría' AND '1'='1' --" });
+      expect(response.status).toBe(400);
     });
 
     it('PATCH puede desactivar y reactivar una categoría', async () => {

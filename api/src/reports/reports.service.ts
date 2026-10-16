@@ -38,6 +38,35 @@ interface UploadedFile {
   buffer: Buffer;
 }
 
+/**
+ * `@UploadedFiles()` (multer) no pasa por el ValidationPipe global (no es un
+ * DTO de class-validator): el tipo que declara el controlador
+ * (`{ buffer: Buffer }[] | undefined`) es solo una promesa de TypeScript en
+ * tiempo de compilación, no algo que el runtime verifique. Hallazgo de
+ * CodeQL ("Type confusion through parameter tampering"): si `files` llegara
+ * como un string en vez de un arreglo, `files.length` cuenta caracteres
+ * (JS permite `.length` en strings) y `files.length > MAX_EVIDENCES` se
+ * evalúa igual, sin lanzar — evadiendo el límite de evidencias. Se valida
+ * aquí, antes de cualquier `.length`/`.map()`, que de verdad sea un arreglo
+ * de objetos con un `buffer` real.
+ */
+function assertValidUploadedFiles(value: unknown): UploadedFile[] {
+  if (
+    !Array.isArray(value) ||
+    !value.every(
+      (file): file is UploadedFile =>
+        typeof file === 'object' &&
+        file !== null &&
+        Buffer.isBuffer((file as { buffer?: unknown }).buffer),
+    )
+  ) {
+    throw new BadRequestException(
+      'Las evidencias no tienen el formato esperado.',
+    );
+  }
+  return value;
+}
+
 /** Datos ya resueltos para armar un ReportResponse sin volver a consultar la BD por cada fila. */
 interface ReportAssemblyContext {
   likedIds: Set<number>;
@@ -150,9 +179,10 @@ export class ReportsService {
 
   async createReport(
     dto: CreateReportDto,
-    files: UploadedFile[],
+    filesInput: unknown,
     userId: number,
   ): Promise<ReportResponse> {
+    const files = assertValidUploadedFiles(filesInput);
     const plataforma = await this.plataformaRepo.findOne({
       where: { idPlataforma: dto.plataformaId },
     });
@@ -260,8 +290,9 @@ export class ReportsService {
   async addEvidences(
     idReporte: number,
     userId: number,
-    files: UploadedFile[],
+    filesInput: unknown,
   ): Promise<ReportResponse> {
+    const files = assertValidUploadedFiles(filesInput);
     if (files.length === 0) {
       throw new BadRequestException('Agrega al menos una imagen.');
     }
