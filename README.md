@@ -263,6 +263,39 @@ Las pruebas e2e (`npm run test:e2e`) necesitan una base MySQL real
 (`clicksafe_test`) que este workflow no monta, así que siguen corriendo en
 local antes de cada PR (ver la sección de arriba).
 
+## Despliegue en el laboratorio
+
+> Esta sección es para una demo rápida en 3 PCs con **Windows**, sin Nginx
+> ni TLS (HTTP plano dentro de la red del laboratorio). Es distinta de
+> [`docs/despliegue.md`](docs/despliegue.md), que describe el despliegue
+> "real" en dos PCs con Linux, Nginx y TLS propio.
+
+1. **Mailpit primero, luego la API.** El registro de usuario envía un
+   correo de verificación; si Mailpit no está corriendo, `POST
+   /auth/register` responde 500. Arranca siempre Mailpit (`mailpit.exe
+   --listen 127.0.0.1:8025 --smtp 127.0.0.1:1025`) antes que la API.
+2. Dentro de `api/`, copia el ejemplo del laboratorio y rellénalo con
+   secretos **nuevos** (no reutilices los de `api/.env` de desarrollo):
+   ```powershell
+   Copy-Item .env.lab.example .env.lab
+   ```
+   Genera cada secreto con
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+   y pon la IP real de la PC de base de datos, la contraseña de
+   `clicksafe_api` y la ruta de `STORAGE_DIR` (créala si no existe).
+3. Crea el primer admin y arranca la API, ambos leyendo `.env.lab` con el
+   `--env-file` nativo de Node (no requiere Docker ni cambiar `api/.env`):
+   ```powershell
+   npm run seed:admin:lab
+   npm run start:lab
+   ```
+4. **Revisa que la hora de Windows coincida con la del celular.** El 2FA
+   (TOTP) depende de que ambos relojes estén sincronizados; un desfase de
+   más de un paso (30 s) hace que códigos válidos se rechacen.
+5. **Al terminar la demo, borra `api/.env.lab`.** Contiene secretos reales
+   en texto plano sobre una PC compartida del laboratorio; no debe quedar
+   ahí después de que termine la sesión.
+
 ## Estado del proyecto
 
 En desarrollo por fases (ver sección 9 de `CLAUDE.md`). Completadas: Fases
