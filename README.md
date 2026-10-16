@@ -14,7 +14,7 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
 ```
 /
 ├── database/    esquema SQL (clicksafe_db.sql)
-├── infra/       docker-compose.yml (MySQL 8 + Mailpit) para desarrollo local
+├── infra/       docker-compose.yml (MySQL 8 + Mailpit); alternativa opcional a instalarlos nativos
 ├── docs/        documentación técnica (se agrega en fases posteriores)
 ├── api/         API REST en NestJS
 └── admin-web/   sitio web de administrador (fase posterior)
@@ -24,57 +24,55 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
 
 - Node.js 22+ (recomendado 24)
 - npm
-- Docker Desktop (para MySQL y Mailpit en desarrollo)
+- MySQL Server 8.0.16+ instalado nativamente (opción principal; ver abajo) **o** Docker Desktop (alternativa opcional, sección "Con Docker")
+- [Mailpit](https://mailpit.axllent.org/) como ejecutable (`mailpit.exe`), fuera del repo
 
 ## Poner en marcha el entorno de desarrollo
 
-1. Copia `infra/.env.example` a `infra/.env` y genera un valor real para
-   `MYSQL_ROOT_PASSWORD`:
+Opción principal: MySQL instalado nativamente en Windows (como servicio) y
+Mailpit como ejecutable suelto, sin Docker. Si prefieres Docker, salta a
+["Con Docker"](#con-docker) más abajo (hace lo mismo, dentro de contenedores).
+
+1. Instala [MySQL Community Server 8.0+](https://dev.mysql.com/downloads/mysql/)
+   para Windows (el instalador lo deja corriendo como servicio en
+   `127.0.0.1:3306`) y toma nota de la contraseña de `root` que elijas ahí.
+2. Carga el esquema (crea la base `clicksafe_db`, sus tablas y los catálogos
+   iniciales) y crea el usuario de mínimo privilegio `clicksafe_api` (la API
+   nunca se conecta como root). Los permisos exactos están comentados al
+   final de `database/clicksafe_db.sql`.
    ```powershell
-   node -e "console.log(require('crypto').randomBytes(24).toString('base64'))"
-   ```
-2. Levanta MySQL y Mailpit (si ya tienes otro MySQL corriendo en el puerto
-   3306, deténlo primero o cambia el puerto publicado en
-   `infra/docker-compose.yml`):
-   ```powershell
-   docker compose -f infra/docker-compose.yml --env-file infra/.env up -d
-   ```
-   - MySQL queda expuesto en `127.0.0.1:3306`.
-   - Mailpit: interfaz web en `http://localhost:8025`, SMTP en `127.0.0.1:1025`.
-3. Carga el esquema (crea la base `clicksafe_db`, sus tablas y los catálogos
-   iniciales):
-   ```powershell
-   Get-Content database/clicksafe_db.sql | docker exec -i clicksafe-mysql mysql -uroot -p<MYSQL_ROOT_PASSWORD>
-   ```
-4. Crea el usuario de mínimo privilegio `clicksafe_api` (la API nunca se
-   conecta como root). Los permisos exactos están comentados al final de
-   `database/clicksafe_db.sql`; para desarrollo local (host `%` en vez de la
-   subred de producción). El ejemplo asume el MySQL de
-   `infra/docker-compose.yml`; si en cambio tienes MySQL instalado
-   directamente en Windows (sin Docker) y la API se conecta a `127.0.0.1`,
-   usa `'clicksafe_api'@'127.0.0.1'` en vez de `'clicksafe_api'@'%'` en
-   cada línea (más restrictivo, y es el host real con el que MySQL ve
-   llegar esa conexión):
-   ```powershell
-   docker exec -i clicksafe-mysql mysql -uroot -p<MYSQL_ROOT_PASSWORD> -e "
-   CREATE USER IF NOT EXISTS 'clicksafe_api'@'%' IDENTIFIED BY '<igual a DB_PASSWORD en api/.env>';
-   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Usuario TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Plataforma TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Categoria_fraude TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, DELETE ON clicksafe_db.Captcha_usado TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Sesion TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Token_verificacion TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT ON clicksafe_db.Bitacora_auditoria TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Reporte TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, DELETE ON clicksafe_db.Evidencia TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT ON clicksafe_db.Revision_reporte TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, DELETE ON clicksafe_db.Like_reporte TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Comentario TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Denuncia_comentario TO 'clicksafe_api'@'%';
-   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Notificacion TO 'clicksafe_api'@'%';
+   Get-Content database/clicksafe_db.sql | & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uroot -p
+
+   & "C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -uroot -p -e "
+   CREATE USER IF NOT EXISTS 'clicksafe_api'@'127.0.0.1' IDENTIFIED BY '<igual a DB_PASSWORD en api/.env>';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Usuario TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Plataforma TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Categoria_fraude TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, DELETE ON clicksafe_db.Captcha_usado TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Sesion TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Token_verificacion TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT ON clicksafe_db.Bitacora_auditoria TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Reporte TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, DELETE ON clicksafe_db.Evidencia TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT ON clicksafe_db.Revision_reporte TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, DELETE ON clicksafe_db.Like_reporte TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Comentario TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE ON clicksafe_db.Denuncia_comentario TO 'clicksafe_api'@'127.0.0.1';
+   GRANT SELECT, INSERT, UPDATE, DELETE ON clicksafe_db.Notificacion TO 'clicksafe_api'@'127.0.0.1';
    FLUSH PRIVILEGES;"
    ```
-5. Instala las dependencias de la API y configura su `.env`:
+3. Descarga Mailpit (ejecutable, sin instalación) desde
+   [sus releases](https://github.com/axllent/mailpit/releases) y guárdalo
+   fuera del repo (p. ej. `C:\Users\<tú>\Documents\BackendRepo\Tools\mailpit.exe`).
+   Cada vez que desarrolles, en su propia terminal:
+   ```powershell
+   cd C:\Users\<tú>\Documents\BackendRepo\Tools
+   .\mailpit.exe --listen 127.0.0.1:8025 --smtp 127.0.0.1:1025
+   ```
+   - Interfaz web: `http://localhost:8025`. SMTP: `127.0.0.1:1025`.
+   - `api/.env` debe tener `MAIL_HOST=127.0.0.1` y `MAIL_PORT=1025` (igual
+     que `.env.example`) para que la API le hable a este Mailpit.
+4. Instala las dependencias de la API y configura su `.env`:
    ```powershell
    cd api
    npm install
@@ -82,15 +80,20 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
    ```
    Edita `api/.env`: genera un valor real para `JWT_ACCESS_SECRET` (mínimo
    32 caracteres) y pon en `DB_PASSWORD` la misma contraseña que usaste para
-   `clicksafe_api` en el paso anterior.
+   `clicksafe_api` en el paso 2. Si `mysqldump.exe`/`mysql.exe` no están en
+   tu PATH (lo normal en Windows), fija también `MYSQLDUMP_PATH`/`MYSQL_PATH`
+   con su ruta completa (ver `.env.example`; los usan `npm run db:backup`/
+   `npm run db:restore`, nunca la API en sí).
    ```powershell
    node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
    ```
-6. Comandos disponibles dentro de `api/`:
+5. Comandos disponibles dentro de `api/`:
    ```powershell
    npm run start:dev    # servidor en modo desarrollo (http://localhost:3000)
    npm run seed:admin   # crea el primer admin (lee SEED_ADMIN_NOMBRE/CORREO del .env)
    npm run seed:demo    # datos de ejemplo para la demo/el panel de admin (ver abajo)
+   npm run db:backup                     # respaldo de la base de desarrollo (backups/, nunca se versiona)
+   npm run db:restore -- <archivo>       # restaura un respaldo (sin --confirm solo muestra qué haría)
    npm run lint          # ESLint
    npm test              # pruebas unitarias (Jest)
    npm run test:e2e      # pruebas end-to-end (Jest + supertest); necesita api/.env.test, ver abajo
@@ -98,6 +101,33 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
    ```
    Con `SWAGGER_ENABLED=true` en `api/.env`, la documentación queda en
    `http://localhost:3000/api/docs`.
+
+### Con Docker
+
+Alternativa opcional a MySQL nativo + Mailpit ejecutable: `infra/docker-compose.yml`
+levanta ambos en contenedores, expuestos en los mismos puertos
+(`127.0.0.1:3306` y `127.0.0.1:8025`/`127.0.0.1:1025`), así que el resto de
+esta guía (configurar `api/.env`, correr la API, etc.) no cambia.
+
+1. Copia `infra/.env.example` a `infra/.env` y genera un valor real para
+   `MYSQL_ROOT_PASSWORD`:
+   ```powershell
+   node -e "console.log(require('crypto').randomBytes(24).toString('base64'))"
+   ```
+2. Levanta MySQL y Mailpit:
+   ```powershell
+   docker compose -f infra/docker-compose.yml --env-file infra/.env up -d
+   ```
+3. Carga el esquema y crea `clicksafe_api` igual que en el paso 2 de arriba,
+   pero vía `docker exec`:
+   ```powershell
+   Get-Content database/clicksafe_db.sql | docker exec -i clicksafe-mysql mysql -uroot -p<MYSQL_ROOT_PASSWORD>
+   docker exec -i clicksafe-mysql mysql -uroot -p<MYSQL_ROOT_PASSWORD> -e "CREATE USER IF NOT EXISTS 'clicksafe_api'@'%' IDENTIFIED BY '...'; -- mismos GRANT de arriba, con @'%' en vez de @'127.0.0.1'"
+   ```
+   `npm run db:backup`/`npm run db:restore` están pensados para mysqldump/mysql
+   nativos (`MYSQLDUMP_PATH`/`MYSQL_PATH`); con Docker, usa en su lugar
+   `docker exec clicksafe-mysql mysqldump ...`/`docker exec -i clicksafe-mysql mysql ...`
+   directamente.
 
 ### Datos de ejemplo (`npm run seed:demo`)
 

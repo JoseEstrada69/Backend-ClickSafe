@@ -3,30 +3,35 @@ import { createWriteStream, existsSync, mkdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   BACKUPS_DIR,
-  MYSQL_CONTAINER,
   assertNotProduction,
-  readDevDbCredentials,
+  readDevDbConnection,
   timestampForFilename,
+  withMysqlOptionsFile,
 } from './lib/dev-db-tools';
 
 /**
  * npm run db:backup
  *
- * Respaldo lógico (mysqldump) de la base de desarrollo, usando el
- * contenedor de MySQL de infra/docker-compose.yml (nunca el cliente mysql
- * del host: así funciona igual sin importar si está instalado ahí). Usa
- * la contraseña de root de infra/.env (nunca se imprime: se pasa al
- * contenedor por la variable de entorno MYSQL_PWD, que mysqldump lee sin
- * que aparezca como argumento `-p...`). El archivo cae en backups/ (en
- * .gitignore, nunca se versiona).
+ * Respaldo lógico (mysqldump nativo) de la base de desarrollo, usando las
+ * mismas credenciales que la API (api/.env, DB_*): clicksafe_api tiene
+ * SELECT en todas las tablas, suficiente con --single-transaction (no
+ * necesita LOCK TABLES). La contraseña nunca se imprime ni se pasa como
+ * argumento de línea de comandos (`-p...`, visible en la lista de procesos
+ * del sistema): se pasa por un "options file" temporal
+ * (--defaults-extra-file) que se borra apenas termina, exista o no error.
+ * El archivo cae en backups/ (en .gitignore, nunca se versiona).
+ *
+ * mysqldump.exe no siempre está en el PATH en Windows (vive en
+ * "C:\Program Files\MySQL\MySQL Server 8.0\bin\" normalmente) -- si
+ * MYSQLDUMP_PATH no está en api/.env, se asume que el comando "mysqldump"
+ * ya resuelve solo.
  */
 async function main(): Promise<void> {
   assertNotProduction('db:backup');
 
-  let dbName: string;
-  let rootPassword: string;
+  let connection: ReturnType<typeof readDevDbConnection>;
   try {
-    ({ dbName, rootPassword } = readDevDbCredentials());
+    connection = readDevDbConnection();
   } catch (error) {
     console.error((error as Error).message);
     process.exitCode = 1;
@@ -36,61 +41,58 @@ async function main(): Promise<void> {
   if (!existsSync(BACKUPS_DIR)) {
     mkdirSync(BACKUPS_DIR, { recursive: true });
   }
-  const fileName = `${dbName}_${timestampForFilename()}.sql`;
+  const fileName = `${connection.dbName}_${timestampForFilename()}.sql`;
   const filePath = join(BACKUPS_DIR, fileName);
 
   console.log(
-    `Respaldando "${dbName}" desde el contenedor "${MYSQL_CONTAINER}"...`,
+    `Respaldando "${connection.dbName}" (${connection.host}:${connection.port}) con ${connection.mysqldumpPath}...`,
   );
 
-  const child = spawn(
-    'docker',
-    [
-      'exec',
-      '-e',
-      `MYSQL_PWD=${rootPassword}`,
-      MYSQL_CONTAINER,
-      'mysqldump',
-      '-u',
-      'root',
-      '--single-transaction',
-      '--no-tablespaces',
-      dbName,
-    ],
-    { stdio: ['ignore', 'pipe', 'pipe'] },
-  );
+  const exitCode = await withMysqlOptionsFile(
+    connection,
+    (optionsFilePath) =>
+      new Promise<number>((resolve, reject) => {
+        const child = spawn(
+          connection.mysqldumpPath,
+          [
+            `--defaults-extra-file=${optionsFilePath}`,
+            '--single-transaction',
+            '--no-tablespaces',
+            connection.dbName,
+          ],
+          { stdio: ['ignore', 'pipe', 'pipe'] },
+        );
 
-  const out = createWriteStream(filePath);
-  child.stdout.pipe(out);
+        const out = createWriteStream(filePath);
+        child.stdout.pipe(out);
 
-  let stderr = '';
-  child.stderr.on('data', (chunk: Buffer) => {
-    stderr += chunk.toString();
-  });
+        let stderr = '';
+        child.stderr.on('data', (chunk: Buffer) => {
+          stderr += chunk.toString();
+        });
 
-  const exitCode = await new Promise<number>((resolve, reject) => {
-    child.on('error', reject); // p. ej. ENOENT si "docker" no está en el PATH
-    child.on('close', resolve);
-  }).catch((error: NodeJS.ErrnoException) => {
+        child.on('error', reject); // p. ej. ENOENT si el comando no existe/no está en el PATH
+        child.on('close', (code) => {
+          out.end(() => resolve(code ?? 1));
+          if (code !== 0 && stderr.trim()) console.error(stderr.trim());
+        });
+      }),
+  ).catch((error: NodeJS.ErrnoException) => {
     if (error.code === 'ENOENT') {
       console.error(
-        'No se encontró el comando "docker". ¿Está Docker instalado y en el PATH? ' +
-          '¿Levantaste infra/docker-compose.yml?',
+        `No se encontró el comando "${connection.mysqldumpPath}". ¿Está instalado MySQL Server? ` +
+          'Si mysqldump no está en el PATH, fija MYSQLDUMP_PATH en api/.env (p. ej. ' +
+          '"C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe").',
       );
     } else {
-      console.error('No se pudo ejecutar docker exec:', error.message);
+      console.error('No se pudo ejecutar mysqldump:', error.message);
     }
     return -1;
   });
 
-  await new Promise((resolve) => out.end(resolve));
-
   if (exitCode !== 0) {
     if (existsSync(filePath)) unlinkSync(filePath);
-    console.error(
-      `mysqldump terminó con código ${exitCode}. ¿Está corriendo el contenedor "${MYSQL_CONTAINER}" (docker compose -f infra/docker-compose.yml up -d)?`,
-    );
-    if (stderr.trim()) console.error(stderr.trim());
+    console.error(`mysqldump terminó con código ${exitCode}.`);
     process.exitCode = 1;
     return;
   }
