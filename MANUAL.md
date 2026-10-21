@@ -2,8 +2,11 @@
 
 > Documentación de referencia del backend de ClickSafe: qué es el proyecto,
 > las reglas de negocio, las decisiones técnicas, la arquitectura de
-> seguridad y el contrato de la API. Para cómo está organizado el trabajo
-> con el asistente de IA en este repositorio, ver [CLAUDE.md](CLAUDE.md).
+> seguridad y el contrato de la API. Las instrucciones de cómo trabajar
+> con el asistente de IA (Claude Code) en este repositorio viven en
+> `CLAUDE.md`, local a cada máquina de desarrollo y fuera de control de
+> versiones (no es documentación del proyecto, es configuración de
+> herramienta).
 
 ---
 
@@ -126,7 +129,7 @@ contra la API y el sitio de admin) y análisis de código estático.
 ```
 /
 ├── MANUAL.md                 ← este archivo
-├── CLAUDE.md                 ← instrucciones de trabajo con el asistente de IA
+├── CLAUDE.md                 ← local, fuera de git (instrucciones de Claude Code)
 ├── README.md                 ← cómo levantar el proyecto (en español)
 ├── .gitignore  .gitattributes  .editorconfig
 ├── database/
