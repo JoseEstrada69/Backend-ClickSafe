@@ -1,7 +1,7 @@
 # Controles de seguridad ↔ ASVS 5.0
 
 Tabla de trazabilidad para el reporte del curso *Integración de seguridad
-informática en redes y sistemas de software* (Fase 7 de `CLAUDE.md`): cada
+informática en redes y sistemas de software* (Fase 7 de `MANUAL.md`): cada
 control implementado, el ataque concreto que previene, el requisito de
 [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/tree/master/5.0/en) que cubre
 (verificado contra el repositorio oficial, no inventado) y el archivo donde
@@ -74,7 +74,7 @@ logging/manejo de errores **V16**.
 | TypeORM `QueryBuilder` parametrizado en todas las consultas; nunca concatenación de strings | Inyección SQL | 1.2.4 | `api/src/reports/reports.service.ts`, `api/src/admin/admin.service.ts` |
 | Búsqueda por texto (`q`) escapa `%`, `_` y `\` antes de armar el `LIKE` | Que el propio patrón de búsqueda del usuario se use para manipular el `LIKE` (p. ej. buscar `%` para forzar un escaneo completo, o inyectar comodines inesperados) | 1.2.4 | `api/src/common/utils/escape-like.ts` |
 | Campos de ordenamiento (`orden`, `estado`) y de filtro cerrado (`accion` de la bitácora) elegidos de una lista blanca (enum/`@IsIn`), nunca pasados directo del query | Inyección SQL u ordenamiento arbitrario vía un parámetro que normalmente se concatenaría en un `ORDER BY`/`WHERE` | 2.2.1 | `api/src/reports/dto/report-query.dto.ts`, `api/src/admin/dto/audit-log-query.dto.ts` |
-| Contenido de usuarios (títulos, descripciones, comentarios) se guarda tal cual y se devuelve como JSON; el cliente lo muestra como texto plano, nunca como HTML | XSS: un título o comentario con `<img src=x onerror=alert(1)>` nunca se ejecuta porque nunca se interpreta como HTML, en el cliente ni en el servidor | 1.2.1 | contrato de respuesta (sección 7 de `CLAUDE.md`); probado con `api/scripts/seed-demo.ts` |
+| Contenido de usuarios (títulos, descripciones, comentarios) se guarda tal cual y se devuelve como JSON; el cliente lo muestra como texto plano, nunca como HTML | XSS: un título o comentario con `<img src=x onerror=alert(1)>` nunca se ejecuta porque nunca se interpreta como HTML, en el cliente ni en el servidor | 1.2.1 | contrato de respuesta (sección 7 de `MANUAL.md`); probado con `api/scripts/seed-demo.ts` |
 | Paginación obligatoria (`page ≥ 1`, `limit` 1–50) en todo listado | Que una sola petición pida millones de filas y agote memoria/CPU del servidor (DoS) | 2.4.1 | `api/src/common/dto/pagination-query.dto.ts` |
 
 ## 7. URLs reportadas y SSRF

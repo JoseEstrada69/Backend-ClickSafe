@@ -38,7 +38,7 @@ Puertos que deben quedar **abiertos**:
    ```
 3. Crea el usuario de mínimo privilegio **restringido a la IP del
    backend** (nunca `%`, nunca root para la API — sección 2 de
-   `CLAUDE.md`). Sustituye `IP_DEL_BACKEND` por la IP real de la otra PC:
+   `MANUAL.md`). Sustituye `IP_DEL_BACKEND` por la IP real de la otra PC:
    ```bash
    mysql -uroot -p -e "
    CREATE USER IF NOT EXISTS 'clicksafe_api'@'IP_DEL_BACKEND' IDENTIFIED BY '<contraseña generada>';

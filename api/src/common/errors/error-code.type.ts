@@ -1,5 +1,5 @@
 /**
- * Lista cerrada de códigos de error estables (sección 7 de CLAUDE.md).
+ * Lista cerrada de códigos de error estables (sección 7 de MANUAL.md).
  * Agregar uno nuevo es una decisión deliberada: la app los traduce a
  * mensajes propios, así que un código suelto en cualquier parte del
  * código rompería ese contrato sin avisar.

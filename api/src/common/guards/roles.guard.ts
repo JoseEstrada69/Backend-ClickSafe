@@ -12,7 +12,7 @@ import type { AuthenticatedRequest } from '../interfaces/jwt-payload.interface';
  * Se ejecuta después de JwtAuthGuard, que ya dejó `request.user` poblado
  * (o rechazó la petición). Las rutas con @Roles('admin') exigen, además del
  * rol, que la sesión tenga el claim `mfa: true` (2FA obligatorio para
- * admins, sección 1 y 4.3 de CLAUDE.md).
+ * admins, sección 1 y 4.3 de MANUAL.md).
  */
 @Injectable()
 export class RolesGuard implements CanActivate {

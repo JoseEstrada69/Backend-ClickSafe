@@ -24,7 +24,7 @@ const MAX_NUMBER = 100_000;
  * en vez de la librería altcha-lib: esa librería solo publica ESM y rompe
  * la compilación CommonJS del proyecto (el mismo problema que ya forzó a
  * fijar versiones de varios paquetes @nestjs/* en fases anteriores).
- * CLAUDE.md permite explícitamente esta implementación manual como
+ * MANUAL.md permite explícitamente esta implementación manual como
  * alternativa.
  *
  * Diseño sin estado en el servidor hasta que se resuelve: el `number`

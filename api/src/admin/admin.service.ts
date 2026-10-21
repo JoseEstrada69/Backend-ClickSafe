@@ -652,7 +652,7 @@ export class AdminService {
     return this.toPlatformResponse(saved);
   }
 
-  /** Nunca se puede desactivar la plataforma "Otra" (sección 1 regla 10, CLAUDE.md). */
+  /** Nunca se puede desactivar la plataforma "Otra" (sección 1 regla 10, MANUAL.md). */
   async updatePlatform(
     idPlataforma: number,
     dto: UpdatePlatformDto,

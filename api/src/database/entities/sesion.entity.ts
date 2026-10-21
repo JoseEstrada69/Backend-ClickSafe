@@ -10,7 +10,7 @@ import { Usuario } from './usuario.entity';
 
 /**
  * Refleja la tabla Sesion. Cada fila es un refresh token (rotación con
- * detección de reuso, 5.6 de CLAUDE.md). token_hash es SHA-256 del token
+ * detección de reuso, 5.6 de MANUAL.md). token_hash es SHA-256 del token
  * real; el token en claro nunca se guarda.
  */
 @Entity('Sesion')

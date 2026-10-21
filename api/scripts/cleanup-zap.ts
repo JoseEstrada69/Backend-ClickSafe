@@ -16,7 +16,7 @@ import { CategoriaFraude, Plataforma, Reporte } from '../src/database/entities';
  * catalog-name.validator.ts). "Limpia" = DESACTIVA (activa = FALSE), nunca
  * DELETE: el usuario de BD de la API (clicksafe_api) no tiene permiso DELETE
  * sobre Plataforma ni Categoria_fraude (confirmado con SHOW GRANTS), y de
- * cualquier forma la sección 1 regla 10 de CLAUDE.md ya es explícita: estos
+ * cualquier forma la sección 1 regla 10 de MANUAL.md ya es explícita: estos
  * catálogos no se borran, se desactivan. Desactivar alcanza para resolver el
  * problema real (que ensucien lo que ve la app iOS): GET /platforms y
  * GET /categories, los que usa la app, solo devuelven activa = TRUE.
