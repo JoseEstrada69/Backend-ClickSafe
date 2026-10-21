@@ -4,7 +4,7 @@ import { AdminService } from './admin.service';
 /**
  * Requisito del reporte (Fase 7): lectura de datos con escenario exitoso y
  * fallido. GET /admin/stats es el ejemplo de "estadísticas admin" que pide
- * CLAUDE.md; GET /admin/reports/:id aporta el escenario fallido (detalle
+ * MANUAL.md; GET /admin/reports/:id aporta el escenario fallido (detalle
  * inexistente), igual que ya existe para el detalle público de reportes.
  */
 describe('AdminService (lectura)', () => {

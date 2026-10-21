@@ -4,7 +4,7 @@ import { IsCatalogName } from '../../common/validators/catalog-name.validator';
 
 /**
  * POST /admin/platforms (sección 1 regla 10, sección 7): `esOtra` nunca se
- * acepta aquí — solo existe la plataforma "Otra" del .sql (CLAUDE.md). El
+ * acepta aquí — solo existe la plataforma "Otra" del .sql (MANUAL.md). El
  * ValidationPipe global (whitelist + forbidNonWhitelisted) rechaza con 400
  * cualquier body que incluya ese campo, porque este DTO no lo declara.
  */

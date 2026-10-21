@@ -6,10 +6,13 @@ sospechosas de fraude en tiendas en línea. Proyecto de la materia
 (Tec de Monterrey), en colaboración con Red por la Ciberseguridad.
 
 > El contexto completo del proyecto (reglas de negocio, decisiones técnicas,
-> fases de trabajo) está en [CLAUDE.md](CLAUDE.md).
+> arquitectura de seguridad, endpoints) está en [MANUAL.md](MANUAL.md).
 
 ## Documentación
 
+- [`MANUAL.md`](MANUAL.md) — manual de referencia del proyecto: qué es
+  ClickSafe, reglas de negocio, stack, estructura del repositorio,
+  arquitectura de seguridad y contrato completo de la API.
 - [`docs/openapi.json`](docs/openapi.json) — contrato completo de la API
   (se regenera con `npm run openapi:export` dentro de `api/`, sin levantar
   el servidor HTTP). Con `SWAGGER_ENABLED=true` también queda interactivo en
@@ -302,9 +305,11 @@ local antes de cada PR (ver la sección de arriba).
 
 ## Estado del proyecto
 
-En desarrollo por fases (ver sección 9 de `CLAUDE.md`). Completadas: Fases
-0-7 (base, seguridad, datos, auth, catálogos/reportes/evidencias/likes,
-comentarios/denuncias/notificaciones, admin, calidad y entrega). Alcance
-reducido en las Fases 4-6 por la fecha de entrega original — ver la nota al
-inicio de la sección 7 de `CLAUDE.md` (varios de esos puntos pospuestos ya
-se implementaron después, en ramas posteriores).
+Fases 0-7 completas (base, seguridad, datos, auth,
+catálogos/reportes/evidencias/likes, comentarios/denuncias/notificaciones,
+admin, calidad y entrega — detalle en la sección 9 de
+[MANUAL.md](MANUAL.md)). Alcance reducido en las Fases 4-6 por la fecha de
+entrega original (varios de esos puntos pospuestos ya se implementaron
+después, en ramas posteriores). El proyecto ya se presentó al socio
+formador y pasó por su ronda de pruebas de penetración; lo que queda es
+mantenimiento y pulido final.

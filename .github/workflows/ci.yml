@@ -1,7 +1,7 @@
 name: CI
 
 # Typecheck + lint + test + build + audit de dependencias en cada PR hacia
-# main (sección 9/Fase 7 de CLAUDE.md). No corre test:e2e aquí: necesita una
+# main (sección 9/Fase 7 de MANUAL.md). No corre test:e2e aquí: necesita una
 # base MySQL real (clicksafe_test) que este workflow no monta; e2e sigue
 # corriendo en local antes de cada PR.
 on:

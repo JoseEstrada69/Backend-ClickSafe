@@ -38,9 +38,9 @@ export interface DevDbConnection {
 }
 
 /**
- * Credenciales de MySQL nativo (sección 0 de CLAUDE.md: scripts de npm,
- * nunca de bash/PowerShell -- deben correr igual en Git Bash y PowerShell).
- * Usa las MISMAS credenciales que la API (api/.env, DB_*): clicksafe_api
+ * Credenciales de MySQL nativo (scripts de npm, nunca de bash/PowerShell
+ * -- deben correr igual en Git Bash y PowerShell). Usa las MISMAS
+ * credenciales que la API (api/.env, DB_*): clicksafe_api
  * tiene SELECT en todas las tablas, suficiente para un respaldo lógico con
  * --single-transaction (no necesita LOCK TABLES). MYSQLDUMP_PATH/MYSQL_PATH
  * son opcionales -- en Windows, mysqldump.exe/mysql.exe normalmente NO

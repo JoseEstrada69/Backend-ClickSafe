@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import type { Role } from '../decorators/roles.decorator';
 
-/** Claims del access token (5.6 de CLAUDE.md). */
+/** Claims del access token (5.6 de MANUAL.md). */
 export interface JwtAccessPayload {
   sub: number;
   rol: Role;

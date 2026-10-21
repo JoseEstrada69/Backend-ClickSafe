@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { CategoriaFraude, Plataforma } from '../database/entities';
 import { CategoryResponse, PlatformResponse } from './dto/catalog-response.dto';
 
-/** Catálogos de solo lectura (sección 7): solo se devuelven los activos. Administrarlos queda pospuesto (ver CLAUDE.md). */
+/** Catálogos de solo lectura (sección 7): solo se devuelven los activos. Administrarlos queda pospuesto (ver MANUAL.md). */
 @Injectable()
 export class CatalogsService {
   constructor(

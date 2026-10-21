@@ -45,3 +45,8 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Instrucciones locales para el asistente de IA (Claude Code). Se queda
+# solo en esta máquina -- MANUAL.md es la documentación oficial del
+# proyecto, versionada; CLAUDE.md es de herramienta, no de repo.
+/CLAUDE.md

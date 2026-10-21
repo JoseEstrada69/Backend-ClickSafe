@@ -10,7 +10,7 @@
  * start:dev). Como código TS normal, ambos modos lo compilan igual.
  *
  * NOTA: esto es un subconjunto curado, no las ~10 000 completas que pide
- * CLAUDE.md. Para un pentest real, sustituye este array por una lista
+ * MANUAL.md. Para un pentest real, sustituye este array por una lista
  * completa (p. ej. 10-million-password-list-top-10000.txt de SecLists).
  */
 const COMMON_PASSWORDS = [

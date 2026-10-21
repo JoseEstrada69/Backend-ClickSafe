@@ -42,7 +42,7 @@ interface SentMail {
 const CODIGO_PATTERN = /c[oó]digo es (\d+)/i;
 
 /**
- * Cubre la sección 4.6 de CLAUDE.md: cada flujo de auth/me debe escribir su
+ * Cubre la sección 4.6 de MANUAL.md: cada flujo de auth/me debe escribir su
  * evento en Bitacora_auditoria, con id_usuario/ip/resultado correctos, y
  * nunca con contraseñas/tokens/captchas/códigos en `detalle`.
  */
@@ -479,7 +479,7 @@ describe('Bitácora de auditoría (e2e) — sección 4.6', () => {
   // --- Acciones administrativas: admin_creado, reporte_revisado,
   // comentario_moderado, usuario_reactivado, evidencia_eliminada ---
   //
-  // Estas 5 ya existían en el código (sección 4.6, CLAUDE.md) pero ninguna
+  // Estas 5 ya existían en el código (sección 4.6, MANUAL.md) pero ninguna
   // tenía una prueba que de verdad revisara su fila en Bitacora_auditoria
   // (solo el status code de la ruta) -- a diferencia de usuario_suspendido
   // (admin-user-status.e2e-spec.ts) y catalogo_modificado
