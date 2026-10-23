@@ -31,6 +31,13 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
         MFA_TOKEN_SCHEME_NAME,
       )
+      // Sin esto, @nestjs/swagger deja "servers": [] -- válido para el
+      // propio esquema, pero varias herramientas que SÍ necesitan saber a
+      // dónde mandar peticiones (p. ej. el importador de OpenAPI de ZAP)
+      // lo rechazan como documento inválido. "/" es relativo a propósito
+      // (se resuelve contra el origen desde donde se importe el
+      // documento, sea cual sea el host/puerto real).
+      .addServer('/')
       .build(),
   );
 }
